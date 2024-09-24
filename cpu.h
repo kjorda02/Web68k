@@ -1,8 +1,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdbool.h>
-#include <stdint.h>
-#include <string.h>
+#include<stdint.h>
+#include<string.h>
 
 typedef struct CPU {
     uint32_t d[8]; // D0-D7
@@ -13,6 +13,4 @@ typedef struct CPU {
     uint8_t ram[16777216]; // Memory (2*^24 bytes)
 } CPU;
 
-extern CPU cpu;
-
-void initCpu();
+CPU* initCpu();

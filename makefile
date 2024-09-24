@@ -1,14 +1,17 @@
 CC=gcc -lm
 CFLAGS=-c -g -Wall -std=gnu99
 
-SOURCES=cpu.c process_srec.c
-LIBRARIES=cpu.o
-INCLUDES=cpu.h process_srec.h
-PROGRAMS=process_srec
+SOURCES=cpu.c process_srec.c cli_emulator.c
+LIBRARIES=cpu.o process_srec.o
+INCLUDES=cpu.h process_srec.h cli_emulator.h
+PROGRAMS=cli_emulator
 OBJS=$(SOURCES:.c=.o)
 
 all: $(OBJS) $(PROGRAMS)
-	vasm_m68k_mot prueba.s -m68000 -chklabels -nocase -Fsrec -exec=START -o "output"
+	@echo "----------------------------------------------------------------------------------------------"
+	@echo "                   C CODE COMPILATION COMPLETE. 68K ASSEMBLY BELOW"
+	@echo "----------------------------------------------------------------------------------------------"
+	vasm_m68k_mot prueba.X68 -m68000 -chklabels -nocase -Fsrec -exec=START -o "output"
 
 $(PROGRAMS): $(LIBRARIES) $(INCLUDES)
 	$(CC) $(LDFLAGS) $(LIBRARIES) $@.o -o $@

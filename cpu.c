@@ -1,7 +1,7 @@
 #include "cpu.h"
-CPU cpu;
+static CPU cpu;
 
-void initCpu() {
+CPU* initCpu() {
     for (int i = 0; i < 8; i++) {
         cpu.d[i] = 0;
     }
@@ -11,4 +11,6 @@ void initCpu() {
     cpu.pc = cpu.sr = 0;
 
     memset(cpu.ram, 0, sizeof(cpu.ram));
+
+    return &cpu;
 }
