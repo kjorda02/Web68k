@@ -41,12 +41,11 @@ char* read_file(char* filename) {
     return buf;
 }
 
-
 /* --- PROCESS_RECORDS -----------------------------------------------------------------------------------
  * Processes S-records, skipping all but S3 and S7 records. For those records, writeBytes is called to read
  * the adress and data (only for S3) bytes, and act accordingly. S7 records indicates the end of program, and
  * does not contain data bytes, only adress bytes with the entrypoint adress. Returns the entrypoing adress.
- * S3 RECORD STRUCTURE: S3LLAAAAAAAADD...DDCC             S7 RECORD STRUCTURE: S7LLAAAAAAAACC
+ *      S3 RECORD STRUCTURE: S3LLAAAAAAAADD...DDCC             S7 RECORD STRUCTURE: S7LLAAAAAAAACC
  * Where:
  *      -> "S3" and "S7" are those literal characters, indicating the record type. All remaining characters are hex characters that encode bytes in pairs.
  *      -> The LL byte indicates the amount of remaining characters (excluding newline)
@@ -57,18 +56,22 @@ char* read_file(char* filename) {
 uint32_t process_records(char* rec, CPU* cpu) {
     char* pos = rec;  // Position in the s-record file
 
+    uint32_t addr = 0;
     while(pos[1] != '7') { // Process each record until we reach the termination record
         int cant = 2*parseHex(pos+2) + 1;  // Read character 3 and 4, which are hex for a number that indicates the number of bytes remaining
 
         if (pos[1] == '3') {  // If it is a data record (S3)
-            writeBytes(pos+4, cant-3, cpu); // substract 2 checksum characters + 1 newline chracter
+            addr = writeBytes(pos+4, cant-3, cpu); // substract 2 checksum characters + 1 newline chracter
+            addr += cant - 3;  // Points to the next unwritten byte
         }
 
         pos += 4 + cant;
     }
 
     // Process last record (obtain entrypoint)
-    uint32_t ep = writeBytes(pos+4, 8, cpu);
+    uint32_t ep = writeBytes(pos+4, 8, cpu); // Does not actually write anything, S7 record has only adress, no data
+    cpu->ram[addr++] = 0xF; // Centinel instruction to end the run loop
+    cpu->ram[addr] = 0xF;
     printf("ENTRY POINT ADDRESS: %x\n", ep);
     return ep;
 }
@@ -114,6 +117,12 @@ uint32_t writeBytes(char* start, int len, CPU* cpu) {
     for (int offset = 0; offset < dataChars; offset += 2) {
         cpu->ram[address+(offset/2)] = parseHex(start+offset);
         fprintf(stderr, "Wrote byte %x to address %x\n", parseHex(start+offset), address+(offset/2));
+        if (address+(offset/2) == 4097) {
+            uint16_t word = fetch_word(4096);
+            INS3333 ii = *(INS3333*) &word;
+            fprintf(stderr, "Corresponding instruction is: [OPCODE: %x | FIELD1: %x | FIELD2: %x | FIELD3: %x | FIELD4: %x]\n", ii.opcode, ii.f1, ii.f2, ii.f3, ii.f4);
+            fprintf(stderr, "Corresponding word is: %x\n", *((uint16_t*) &cpu->ram[4096]));
+        }
     }
     fprintf(stderr, "--------------------------------------------------\n");
 

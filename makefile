@@ -1,9 +1,9 @@
 CC=gcc -lm
 CFLAGS=-c -g -Wall -std=gnu99
 
-SOURCES=cpu.c process_srec.c cli_emulator.c
-LIBRARIES=cpu.o process_srec.o
-INCLUDES=cpu.h process_srec.h cli_emulator.h
+SOURCES=cpu.c process_srec.c cli_emulator.c instructions.c
+LIBRARIES=cpu.o process_srec.o instructions.o
+INCLUDES=cpu.h process_srec.h cli_emulator.h instructions.h
 PROGRAMS=cli_emulator
 OBJS=$(SOURCES:.c=.o)
 

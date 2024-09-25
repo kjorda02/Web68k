@@ -7,5 +7,6 @@ int main(int argc, char* argv[]) {
         fprintf(stderr, "ERROR: Too many arguments.");
 
     CPU* cpu = initCpu(); // Initializes register and RAM with 0s
-    load_srec(argv[1], cpu); // Reads S-record file and loads instructions to memory
+    uint32_t entryPoint = load_srec(argv[1], cpu); // Reads S-record file and loads instructions to memory
+    // int statusCode = run_program(entryPoint);
 }
