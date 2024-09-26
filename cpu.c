@@ -21,7 +21,7 @@ CPU* initCpu() {
 */
 int run_program(uint32_t entryPoint) {
     cpu.pc = entryPoint;
-    INS IR = {0, 0, 0, 0}; // Instruction register
+    INS IR = {0, 0}; // Instruction register
 
     while (IR.opcode != 0b1111) {
         IR = fetch();
@@ -80,32 +80,6 @@ void decode(INS ins) {
     execute[ins.opcode](ins, cpu);  // Calls the function corresponding to the opcode
 }
 
-
-void decode_op0(INS i, CPU cpu) {
-    INS31233 ins = *(INS31233*) &i;
-
-    if (ins.f2) {  // Bit 7 is set
-
-    }
-    else {
-        switch(ins.f1) {
-            case 0b000:  // ORI to CCR
-                break;
-            case 0b001:
-                break;
-            case 0b010:
-                break;
-            case 0b011:
-                break;
-            case 0b100:
-                break;
-            case 0b101:
-                break;
-            case 0b110:
-                break;
-        }
-    }
-}
 
 void decode_op4(INS ins, CPU cpu) {
 
