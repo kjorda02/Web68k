@@ -36,6 +36,26 @@ void decode_op0(INS i, CPU cpu) {
     }
 }
 
+void decode_op5(INS i, CPU cpu) {
+    INS31233 ins = *(INS31233*) &i;
+    INS4233 ins2 = *(INS4233*) &i; // Only used to pass as argument to instruction implementation function
+
+    if (ins.f3 == 0b11) {
+        if (ins.f4 == 0b001)
+            DBcc(ins2, cpu);
+        else
+            Scc(ins2, cpu);
+    }
+    else { // 0101 X [^11] XXX XXX
+        if (ins.f2)
+            subq(ins, cpu);
+        else
+            addq(ins, cpu);
+    }
+}
+
+// === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0000 ======================
+
 void ori(INS31233 Ins, CPU cpu) {
     // TODO: If operand in fields 4 and 5 indicates immediate, then the operation is done on
     // the SR (destination operand cannot be immedate). Check field 3 as usual to determine if
@@ -74,3 +94,17 @@ void bop(INS31233 Ins, CPU cpu) {
     // Check field 3 to decode between BTST, BCHG, BCLR and BSET
 }
 
+// === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0101 ======================
+
+void addq(INS31233 ins, CPU cpu) {
+
+}
+void subq(INS31233 ins, CPU cpu) {
+
+}
+void Scc(INS4233 ins, CPU cpu) {
+
+}
+void DBcc(INS4233 ins, CPU cpu) {
+
+}

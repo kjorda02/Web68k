@@ -2,6 +2,13 @@
 
 void decode_op0(INS i, CPU cpu);
 void decode_op4(INS i, CPU cpu);
+void decode_op5(INS i, CPU cpu);
+void decode_op8(INS i, CPU cpu);
+void decode_op9(INS i, CPU cpu);
+void decode_op11(INS i, CPU cpu);
+void decode_op12(INS i, CPU cpu);
+void decode_op13(INS i, CPU cpu);
+void decode_op14(INS i, CPU cpu);
 
 //void ori_to_ccr(INS ins, CPU cpu);
 //void ori_to_sr(INS ins, CPU cpu);
@@ -50,48 +57,48 @@ void rte(CPU cpu);
 void rts(CPU cpu);
 void trapv(CPU cpu);
 void rtr(CPU cpu);
-void jsr(INS ins, CPU cpu);
-void jmp(INS ins, CPU cpu);
+void jsr(INS4233 ins, CPU cpu);
+void jmp(INS4233 ins, CPU cpu);
 void movem(INS4233 ins, CPU cpu);
-void lea(INS ins, CPU cpu);
-void chk(INS ins, CPU cpu);
+void lea(INS3333 ins, CPU cpu);
+void chk(INS3333 ins, CPU cpu);
 
-void addq(INS ins, CPU cpu);
-void subq(INS ins, CPU cpu);
-void Scc(INS ins, CPU cpu);
-void DBcc(INS ins, CPU cpu);
+void addq(INS31233 ins, CPU cpu);
+void subq(INS31233 ins, CPU cpu);
+void Scc(INS4233 ins, CPU cpu);
+void DBcc(INS4233 ins, CPU cpu);
 
-void bra(INS ins, CPU cpu);
-void bsr(INS ins, CPU cpu);
+//void bra(INS ins, CPU cpu);
+//void bsr(INS ins, CPU cpu);
 void Bcc(INS ins, CPU cpu);
 
 void moveq(INS ins, CPU cpu);
 
-void divu(INS ins, CPU cpu);
-void divs(INS ins, CPU cpu);
-void sbcd(INS ins, CPU cpu);
-void OR(INS ins, CPU cpu);
+void divu(INS31233 ins, CPU cpu);
+void divs(INS31233 ins, CPU cpu);
+void sbcd(INS31233 ins, CPU cpu);
+void OR(INS31233 ins, CPU cpu);
 
-void sub(INS ins, CPU cpu);
-void subx(INS ins, CPU cpu);
-void suba(INS ins, CPU cpu);
+void sub(INS31233 ins, CPU cpu);
+void subx(INS31233 ins, CPU cpu);
+void suba(INS31233 ins, CPU cpu);
 
-void eor(INS ins, CPU cpu);
-void cmpm(INS ins, CPU cpu);
-void cmp(INS ins, CPU cpu);
-void cmpa(INS ins, CPU cpu);
+void eor(INS31233 ins, CPU cpu);
+void cmpm(INS31233 ins, CPU cpu);
+void cmp(INS31233 ins, CPU cpu);
+void cmpa(INS31233 ins, CPU cpu);
 
-void mulu(INS ins, CPU cpu);
-void muls(INS ins, CPU cpu);
-void abcd(INS ins, CPU cpu);
-void exg(INS ins, CPU cpu);
-void AND(INS ins, CPU cpu);
+void mulu(INS31233 ins, CPU cpu);
+void muls(INS31233 ins, CPU cpu);
+void abcd(INS31233 ins, CPU cpu);
+void exg(INS31233 ins, CPU cpu);
+void AND(INS31233 ins, CPU cpu);
 
-void add(INS ins, CPU cpu);
-void addx(INS ins, CPU cpu);
-void adda(INS ins, CPU cpu);
+void add(INS31233 ins, CPU cpu);
+void addx(INS31233 ins, CPU cpu);
+void adda(INS31233 ins, CPU cpu);
 
-void ASd(INS ins, CPU cpu);
-void LSd(INS ins, CPU cpu);
-void ROXd(INS ins, CPU cpu);
-void ROd(INS ins, CPU cpu);
+void ASd(INS31233 ins, CPU cpu);
+void LSd(INS31233 ins, CPU cpu);
+void ROXd(INS31233 ins, CPU cpu);
+void ROd(INS31233 ins, CPU cpu);

@@ -11,7 +11,10 @@ void decode_op4(INS i, CPU cpu) {
     // (opcode) (f1) (f2) (f3) (f4)
     INS4233 ins = *(INS4233*) &i;
 
-    switch(i.opcode) { // We look at the next 4 bits after the opcode
+    INS3333 ins3 = *(INS3333*) &i; // For LEA and CHK instructions
+
+    // We look at the next 4 bits after the opcode
+    switch(i.opcode) { // 0100 XXXX XX XXX XXX
         case 0b0000:
             if (ins.f2 == 0b11)
                 move_from_sr(ins, cpu);
@@ -33,25 +36,25 @@ void decode_op4(INS i, CPU cpu) {
             else
 ;               NOT(ins, cpu);
             break;
-        case 0b1000:
+        case 0b1000: // 0100 1000 XX XXX XXX
                 if (ins.f2 == 0b00) {
                     nbcd(ins, cpu);
                 }
-                else if (ins.f2 == 0b01) {
+                else if (ins.f2 == 0b01) { // 0100 1000 01 XXX XXX
                     if (ins.f3 == 0b000)
                         swap(ins, cpu);
                     else
                         pea(ins, cpu);
                 }
-                else { // Field 2 is 10 or 11
+                else { // 0100 1000 [10|11] XXX XXX
                     if (ins.f3 == 0b000)
                         ext(ins, cpu);
                     else
  ;                      movem(ins, cpu);
                 }
             break;
-        case 0b1010:
-            if (ins.f2 == 0b11) {
+        case 0b1010: // 0100 1010 XX XXX XXX
+            if (ins.f2 == 0b11) { // 0100 1010 11 XXX XXX
                 if (ins.f3 == 0b111 && ins.f4 == 0b100)
                     illegal(cpu);
                 else
@@ -111,13 +114,22 @@ void decode_op4(INS i, CPU cpu) {
                 }
             }
             else { // 0100 1110 [10|11] XXX XXX
-
+                if (ins.f2 == 0b10)
+                    jsr(ins, cpu);
+                else if (ins.f2 == 0b11)
+                    jmp(ins, cpu);
             }
             break;
-        default:
+        default: // 0100 XXX1 1X XXX XXX
+            if (ins.f2 == 0b11)
+                lea(ins3, cpu);
+            else if (ins.f2 == 0b10)
+                chk(ins3,  cpu);
             break;
     }
 }
+
+// === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0100 ======================
 
 void move_from_sr(INS4233 ins, CPU cpu){
 
@@ -194,10 +206,18 @@ void trapv(CPU cpu) {
 void rtr(CPU cpu) {
 
 }
-// void jsr(INS ins, CPU cpu);
-// void jmp(INS ins, CPU cpu);
+void jsr(INS4233 ins, CPU cpu) {
+
+}
+void jmp(INS4233 ins, CPU cpu) {
+
+}
 void movem(INS4233 ins, CPU cpu) {
 
 }
-// void lea(INS ins, CPU cpu);
-// void chk(INS ins, CPU cpu);
+void lea(INS3333 ins, CPU cpu) {
+
+}
+void chk(INS3333 ins, CPU cpu) {
+
+}

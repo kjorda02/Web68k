@@ -81,7 +81,7 @@ typedef struct INS48 {
     uint16_t dir : 8;
     uint16_t cond : 4;
     uint16_t opcode : 4;
-} INS448;
+} INS48;
 
 typedef struct INS318 {
     uint16_t f3 : 8;

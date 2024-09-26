@@ -59,21 +59,21 @@ uint16_t fetch_long(uint32_t pos) {
 // TODO: To CCR
 void decode(INS ins) {
     static void (*execute[16])(INS, CPU) = {
-        NULL, //ADDI, ANDI, BCHG, BCLR, BSET, BTST, CMPI, EORI, MOVEP, ORI, ORI TO CCR, ORI TO SR, SUBI
+        &decode_op0,
         &move,
         &move,
         &move,
-        NULL, // CHK, CLR, EXT, ILLEGAL, JMP, JSR, LEA, LINK, MOVE TO CCR, MOVE FROM SR, MOVE TO SR, MOVE USP, MOVEM, NEG, NEGX, NOP, NOT, PEA, RESET, RTE, RTR, RTS, STOP, SWAP, TAS, TRAP, TRAPV, TST, UNLK
-        NULL, // ADDQ, DBcc, Scc, SUBQ
-        NULL,// BCC, BRA, BSR,
-        NULL,// MOVEQ, ROL, ROR, ROXL, ROXR
-        NULL,// DIVS, DIVU, OR, SBCD,
-        NULL, // SUB, SUBA, SUBX,
-        NULL,
-        NULL, // CMP, CMPA, CMPM, EOR
-        NULL, // ABCD, AND, EXG, MULS, MULU, NBCD
-        NULL, // TIPO ALU (ADD, ADDA, ADDX, )
-        NULL, // ASL, ASR, LSL, LSR
+        &decode_op4,
+        &decode_op5,
+        &Bcc,
+        &moveq,
+        &decode_op8,
+        &decode_op9,
+        NULL, // not used
+        &decode_op11,
+        &decode_op12,
+        &decode_op13,
+        &decode_op14,
         NULL,
     };
 
