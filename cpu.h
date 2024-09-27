@@ -15,8 +15,8 @@ typedef struct CPU {
 } CPU;
 
 typedef struct INS {
-    uint16_t f1;
-    uint16_t opcode;
+    uint16_t f1 : 12;
+    uint16_t opcode : 4;
 } INS;
 
 typedef struct INS31233 {

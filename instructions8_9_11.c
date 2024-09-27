@@ -1,6 +1,6 @@
 #include "instructions.h"
 
-void decode_op8(INS i, CPU cpu) {
+void decode_op8(INS i, CPU* cpu) {
     // We break the instruction bits into 6 fields:
     //   XXXX   XXX    X   XX  XXX  XXX
     // (opcode) (f1) (f2) (f3) (f4) (f5)
@@ -26,7 +26,7 @@ void decode_op8(INS i, CPU cpu) {
     }
 }
 
-void decode_op9(INS i, CPU cpu) {
+void decode_op9(INS i, CPU* cpu) {
     INS31233 ins = *(INS31233*) &i;
 
     if (ins.f3 == 0b11) {
@@ -42,7 +42,7 @@ void decode_op9(INS i, CPU cpu) {
 
 }
 
-void decode_op11(INS i, CPU cpu) {
+void decode_op11(INS i, CPU* cpu) {
     INS31233 ins = *(INS31233*) &i;
 
     if (ins.f3 == 0b11) {
@@ -62,40 +62,40 @@ void decode_op11(INS i, CPU cpu) {
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1000 ======================
-void divu(INS31233 ins, CPU cpu) {
+void divu(INS31233 ins, CPU* cpu) {
 
 }
-void divs(INS31233 ins, CPU cpu) {
+void divs(INS31233 ins, CPU* cpu) {
 
 }
-void sbcd(INS31233 ins, CPU cpu) {
+void sbcd(INS31233 ins, CPU* cpu) {
 
 }
-void OR(INS31233 ins, CPU cpu) {
-
-}
-
-// === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1011 ======================
-void sub(INS31233 ins, CPU cpu) {
-
-}
-void subx(INS31233 ins, CPU cpu) {
-
-}
-void suba(INS31233 ins, CPU cpu) {
+void OR(INS31233 ins, CPU* cpu) {
 
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1011 ======================
-void eor(INS31233 ins, CPU cpu) {
+void sub(INS31233 ins, CPU* cpu) {
 
 }
-void cmpm(INS31233 ins, CPU cpu) {
+void subx(INS31233 ins, CPU* cpu) {
 
 }
-void cmp(INS31233 ins, CPU cpu) {
+void suba(INS31233 ins, CPU* cpu) {
 
 }
-void cmpa(INS31233 ins, CPU cpu) {
+
+// === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1011 ======================
+void eor(INS31233 ins, CPU* cpu) {
+
+}
+void cmpm(INS31233 ins, CPU* cpu) {
+
+}
+void cmp(INS31233 ins, CPU* cpu) {
+
+}
+void cmpa(INS31233 ins, CPU* cpu) {
 
 }

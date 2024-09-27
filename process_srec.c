@@ -62,7 +62,8 @@ uint32_t process_records(char* rec, CPU* cpu) {
 
         if (pos[1] == '3') {  // If it is a data record (S3)
             addr = writeBytes(pos+4, cant-3, cpu); // substract 2 checksum characters + 1 newline chracter
-            addr += cant - 3;  // Points to the next unwritten byte
+            addr += (cant - 8 - 3)/2;  // Points to the next unwritten byte
+            //printf("read %x bytes\n", ((cant - 8 - 3)/2));
         }
 
         pos += 4 + cant;
@@ -70,8 +71,9 @@ uint32_t process_records(char* rec, CPU* cpu) {
 
     // Process last record (obtain entrypoint)
     uint32_t ep = writeBytes(pos+4, 8, cpu); // Does not actually write anything, S7 record has only adress, no data
-    cpu->ram[addr++] = 0xF; // Centinel instruction to end the run loop
-    cpu->ram[addr] = 0xF;
+    printf("CENTINEL INSTRUCTION ADDRESS: %x\n", addr);
+    cpu->ram[addr++] = 0xFF; // Centinel instruction to end the run loop
+    cpu->ram[addr] = 0xFF;
     printf("ENTRY POINT ADDRESS: %x\n", ep);
     return ep;
 }

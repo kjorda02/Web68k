@@ -1,6 +1,6 @@
 #include "instructions.h"
 
-void decode_op12(INS i, CPU cpu) {
+void decode_op12(INS i, CPU* cpu) {
     // We break the instruction bits into 6 fields:
     //   XXXX   XXX    X   XX  XXX  XXX
     // (opcode) (f1) (f2) (f3) (f4) (f5)
@@ -27,7 +27,7 @@ void decode_op12(INS i, CPU cpu) {
 }
 
 
-void decode_op13(INS i, CPU cpu) {
+void decode_op13(INS i, CPU* cpu) {
     INS31233 ins = *(INS31233*) &i;
 
     if (ins.f3 == 0b11) {
@@ -42,7 +42,7 @@ void decode_op13(INS i, CPU cpu) {
 }
 
 
-void decode_op14(INS i, CPU cpu) {
+void decode_op14(INS i, CPU* cpu) {
     INS31233 ins = *(INS31233*) &i;
 
     uint8_t type;;
@@ -65,43 +65,43 @@ void decode_op14(INS i, CPU cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1100 ======================
 
-void mulu(INS31233 ins, CPU cpu) {
+void mulu(INS31233 ins, CPU* cpu) {
 
 }
-void muls(INS31233 ins, CPU cpu) {
+void muls(INS31233 ins, CPU* cpu) {
 
 }
-void abcd(INS31233 ins, CPU cpu) {
+void abcd(INS31233 ins, CPU* cpu) {
 
 }
-void exg(INS31233 ins, CPU cpu) {
+void exg(INS31233 ins, CPU* cpu) {
 
 }
-void AND(INS31233 ins, CPU cpu) {
+void AND(INS31233 ins, CPU* cpu) {
 
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1101 ======================
-void add(INS31233 ins, CPU cpu) {
+void add(INS31233 ins, CPU* cpu) {
 
 }
-void addx(INS31233 ins, CPU cpu) {
+void addx(INS31233 ins, CPU* cpu) {
 
 }
-void adda(INS31233 ins, CPU cpu) {
+void adda(INS31233 ins, CPU* cpu) {
 
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1110 ======================
-void ASd(INS31233 ins, CPU cpu) {
+void ASd(INS31233 ins, CPU* cpu) {
 
 }
-void LSd(INS31233 ins, CPU cpu) {
+void LSd(INS31233 ins, CPU* cpu) {
 
 }
-void ROXd(INS31233 ins, CPU cpu) {
+void ROXd(INS31233 ins, CPU* cpu) {
 
 }
-void ROd(INS31233 ins, CPU cpu) {
+void ROd(INS31233 ins, CPU* cpu) {
 
 }

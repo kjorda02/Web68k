@@ -36,7 +36,9 @@ int run_program(uint32_t entryPoint) {
  * Obtains the instruction pointed to by the PC and increments it by 2 (2 bytes per instruction)
 */
 INS fetch() {
-    INS i = *((INS*) &cpu.ram[cpu.pc]);
+    uint16_t word = fetch_word(cpu.pc);
+    printf("DECODING WORD: %x\n", word);
+    INS i = *((INS*) &word);
     cpu.pc += 2;
 
     return i;
@@ -56,9 +58,8 @@ uint16_t fetch_long(uint32_t pos) {
 }
 
 
-// TODO: To CCR
 void decode(INS ins) {
-    static void (*execute[16])(INS, CPU) = {
+    static void (*execute[16])(INS, CPU*) = {
         &decode_op0,
         &move,
         &move,
@@ -74,13 +75,12 @@ void decode(INS ins) {
         &decode_op12,
         &decode_op13,
         &decode_op14,
-        NULL,
+        NULL, // not used
     };
 
-    execute[ins.opcode](ins, cpu);  // Calls the function corresponding to the opcode
+    if (execute[ins.opcode] != NULL){
+        execute[ins.opcode](ins, &cpu);  // Calls the function corresponding to the opcode
+    }
 }
-
-
-void decode_op4(INS ins, CPU cpu) {
-
-}
+// C00
+// 0000 1100 0000 0000
