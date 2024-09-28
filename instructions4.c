@@ -3,7 +3,7 @@
 
 /* --- DECODE_OP4 -----------------------------------------------------------------------------------
  * Decode instruction with opcode 0100. Calls the appropiate funnction to run the instruction
- * Check http://goldencrystal.free.fr/M68kOpcodes-v2.3.pdf if you want to understand anything
+ * Check http://goldencrystal.free.fr/M68kOpcodes-v2.3.pdf for details
 */
 void decode_op4(INS i, CPU* cpu) {
     // We break the instruction bits into 5 fields:

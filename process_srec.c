@@ -1,4 +1,5 @@
 #include "process_srec.h"
+#include "colors.h"
 #include <unistd.h>
 
 /* --- LOAD_SREC -----------------------------------------------------------------------------------
@@ -54,8 +55,11 @@ char* read_file(char* filename) {
  *      -> CC is a checksum byte which can be ignored
 */
 uint32_t process_records(char* rec, CPU* cpu) {
-    char* pos = rec;  // Position in the s-record file
+    fprintf(stderr, MAGENTA "==================================================\n");
+    fprintf(stderr, "              READING S-RECORD FILE\n");
+    fprintf(stderr, "==================================================\n"RES);
 
+    char* pos = rec;  // Position in the s-record file
     uint32_t addr = 0;
     while(pos[1] != '7') { // Process each record until we reach the termination record
         int cant = 2*parseHex(pos+2) + 1;  // Read character 3 and 4, which are hex for a number that indicates the number of bytes remaining
@@ -71,10 +75,10 @@ uint32_t process_records(char* rec, CPU* cpu) {
 
     // Process last record (obtain entrypoint)
     uint32_t ep = writeBytes(pos+4, 8, cpu); // Does not actually write anything, S7 record has only adress, no data
-    printf("CENTINEL INSTRUCTION ADDRESS: %x\n", addr);
     cpu->ram[addr++] = 0xFF; // Centinel instruction to end the run loop
     cpu->ram[addr] = 0xFF;
-    printf("ENTRY POINT ADDRESS: %x\n", ep);
+    printf(MAGENTA "ENTRY POINT ADDRESS: " BOLD_GREEN"%x\n", ep);
+    fprintf(stderr, MAGENTA"--------------------------------------------------\n"RES);
     return ep;
 }
 
@@ -112,21 +116,18 @@ uint32_t writeBytes(char* start, int len, CPU* cpu) {
     address += parseHex(start);
     start += 2; // Start now points to the first data character
 
-    fprintf(stderr, "Writing %d bytes to adress 0x%x\n", (len-8)/2, address);
+    //fprintf(stderr, "Writing %d bytes to adress 0x%x\n", (len-8)/2, address);
 
     // Write data contained in the S-RECORD to the specified address
     int dataChars = len-8;
+    bool print = false;
     for (int offset = 0; offset < dataChars; offset += 2) {
         cpu->ram[address+(offset/2)] = parseHex(start+offset);
-        fprintf(stderr, "Wrote byte %x to address %x\n", parseHex(start+offset), address+(offset/2));
-        if (address+(offset/2) == 4097) {
-            uint16_t word = fetch_word(4096);
-            INS3333 ii = *(INS3333*) &word;
-            fprintf(stderr, "Corresponding instruction is: [OPCODE: %x | FIELD1: %x | FIELD2: %x | FIELD3: %x | FIELD4: %x]\n", ii.opcode, ii.f1, ii.f2, ii.f3, ii.f4);
-            fprintf(stderr, "Corresponding word is: %x\n", *((uint16_t*) &cpu->ram[4096]));
+        if (print) {
+            fprintf(stderr, BOLD_GREEN "[%x] " BLUE "%08b %08b\n" RES, address+(offset/2)-1, parseHex(start+offset-2), parseHex(start+offset));
         }
+        print = !print;
     }
-    fprintf(stderr, "--------------------------------------------------\n");
 
     return address;
 }

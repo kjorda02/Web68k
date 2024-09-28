@@ -1,5 +1,9 @@
 #include "instructions.h"
 
+/* --- DECODE_OP12, DECODE_OP13, DECODE_OP14  -------------------------------------------------------
+ * Decode instructions with opcode 1100, 1101 and 1110, respectively. Calls the appropiate funnction
+ * to run the instruction. Check http://goldencrystal.free.fr/M68kOpcodes-v2.3.pdf for details
+*/
 void decode_op12(INS i, CPU* cpu) {
     // We break the instruction bits into 6 fields:
     //   XXXX   XXX    X   XX  XXX  XXX
