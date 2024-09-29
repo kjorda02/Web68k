@@ -45,7 +45,6 @@ void decode_op13(INS i, CPU* cpu) {
     }
 }
 
-
 void decode_op14(INS i, CPU* cpu) {
     INS31233 ins = *(INS31233*) &i;
 

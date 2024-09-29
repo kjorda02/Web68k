@@ -10,7 +10,7 @@ CPU* initCpu() {
     for (int i = 0; i < 8; i++) {
         cpu.a[i] = 0;
     }
-    CCR ccr = {0,0,0,0,0,0};
+    CCR ccr = {0,0,1,0,0,0};
     SR sr = {ccr, 0, 0, 0, 0, 0};
     cpu.sr = sr;
     cpu.pc = cpu.cycles = 0;
@@ -32,6 +32,7 @@ int run_program(uint32_t entryPoint) {
         decode(IR); // Decode calls execute
     }
 
+
     return 0;
 }
 
@@ -52,16 +53,24 @@ INS fetch() {
  * to be read (Byte=00, Word=01, Long=10).
 */
 uint32_t read_mem(uint32_t pos, uint8_t size) {
-
+    if (pos < 0 || pos > sizeof(cpu.ram)-1) {
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "Cannot read from position 0x%x: Out of bounds\n", pos);
+        logmsg(ERROR, "cpu.c:read_mem", buffer);
+        exit(EXIT_FAILURE);
+    }
     // We need to convert it to little endian format before casting to uint32_t
     uint8_t bytes[4] = {cpu.ram[pos+3],cpu.ram[pos+2],cpu.ram[pos+1], cpu.ram[pos]};
     uint32_t data = *((uint32_t*) &bytes);
 
     if (size == 0b00) { // Byte
+        data >>= 24;
         return (int8_t) (data & 0x000000FF); // Casting to signed int for sign extension
     }
     else if (size == 0b01) { // Word
-        return (int16_t) (data & 0x0000FFFF);
+        data >>= 16;
+        data = (int16_t) (data & 0x0000FFFF);
+        return data;
     }
     else if (size == 0b10) { // Long
         return data;
@@ -77,7 +86,12 @@ uint32_t read_mem(uint32_t pos, uint8_t size) {
  * to be written to, and <size> the size of the data to be written (Byte=00, Word=01, Long=10).
 */
 void write_mem(uint32_t pos, uint8_t size, uint32_t data) {
-
+    if (pos < 0 || pos > sizeof(cpu.ram)-1) {
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "Cannot write to position 0x%x: Out of bounds\n", pos);
+        logmsg(ERROR, "cpu.c:write_mem", buffer);
+        exit(EXIT_FAILURE);
+    }
     if (size == 0b00) // Byte size. Write least significant byte to the position
         cpu.ram[pos]   =  data & 0xFF;
 
@@ -98,12 +112,19 @@ void write_mem(uint32_t pos, uint8_t size, uint32_t data) {
 }
 
 uint32_t fetch_data(uint8_t size) {
-    uint32_t data = read_mem(cpu.pc, size);
-    if (size == 0b00 || size == 0b01)
-        cpu.pc += 2;
-    else if (size == 0b10)
-        cpu.pc += 4;
-    else {
+    uint32_t data;
+    if (size == 0b00) { // Byte
+        data = read_mem(cpu.pc, WORD);
+        data &= 0x00FF; // Byte is stored in low part of word
+        data = (int8_t) data; // Sign extend
+    }
+    else
+        data = read_mem(cpu.pc, size);
+
+    cpu.pc += 2; // Incremented at least 2 (for byte and word operations)
+    if (size == 0b10)
+        cpu.pc += 2; // Another 2 if long
+    else if (size > 0b10){
         logmsg(ERROR, "cpu.c:fetch_data", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
@@ -195,80 +216,62 @@ void decode(INS ins) {
     }
 }
 
-/* --- ACCESS_OPERAND ----------------------------------------------------------------------------------
- * Finds the effective address according to the mode specified in (M) and (Xn). Writes the data
- * in (buf), taking into account the size specified in (size). 0=Byte, 1=Word, 2=Long.
- * (allowed_addr_modes) indicates the valid values for (M) and (Xn). Since these 2 parameters are 3-bit,
- * they only have 8 possible values each. The low byte of (allowed_addr_modes) indicates which values are
- * allowed for (M), with the least significant bit indicating whether M=0 is allowed, bit 1 indicating if
- * M=1 is allowed, and so on. If M=7, then it is necessary to look at (Xn), and for this, the high byte
- * is used to determine the allowed values for (Xn) in the same manner.
- * TODO: CHANGE NAME
+/* --- READ_OPERAND ----------------------------------------------------------------------------------
+ * Finds the effective address using the values of (M) and (Xn). Reads the data, if (adressOnly) is  not
+ * set. (size) specifies the size of the data to be read (00=Byte, 01=Word, 10=Long). Returns an operand
+ * struct, that contains the effective address, and the value of the operand if it was read. It also contains
+ * a boolean which indicates whether the data was in memory or in a register. Calling the function with
+ * (adressOnly) unset is useful to find the EA of the destination operand, when it does not need to be read.
  *
- * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ MOTOROLA 68000 INSTRUCTION FORMAT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- *      [1] SINGLE EFFECTIVE ADDRESS OPERATION WORD (1 word)
- *      [2] IMMEDIATE OPERAND OR SOURCE BRIEF EXTENSION WORD
- *      [3] DESTINATION BRIEF EXTENSION WORD
- *
+ * WARNING: EXTENSION WORDS AFTER THE INSTRUCTION MUST BE READ IN THE FOLLOWING ORDER:
+ *      [1] Instruction specific data (e.g. bit number for BTST, displacement for BRA or immediate data for ADDI)
+ *      [2] Data relating to the first operand's adressing mode (immediate/indirect/brief extension word)
+ *      [2] Data relating to the second operand's adressing mode (indirect/brief extension word)
 */
-int access_operand(uint32_t* buf, uint8_t size, uint16_t allowed_addr_modes, uint8_t M, uint8_t Xn, bool write) {
-    if ( (1 & (allowed_addr_modes >> M) ) == 0) { // Checks bit M from the low byte of allowed_addr_modes
-        char buffer[100];
-        snprintf(buffer, sizeof(buffer), "Adressing mode M=%b not allowed", M);
-        logmsg(ERROR, "cpu.c:read_operand", buffer);
-        exit(EXIT_FAILURE);
-    }
-    if (M == 7 && (0x100 & (allowed_addr_modes >> Xn)) == 0 ) { // Checks bit Xn from the high byte of allowed_addr_modes
-        char buffer[100];
-        snprintf(buffer, sizeof(buffer), "Adressing mode M=%b, Xn=%b not allowed", M, Xn);
-        logmsg(ERROR, "cpu.c:read_operand", buffer);
-        exit(EXIT_FAILURE);
-    }
-
+operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool addressOnly) {
     uint8_t nbytes = size_to_bytes(size); // Used for postincrement and predecrement
 
     // B, W and L refer to displacements or adresses: 8, 16 or 32 bit, respectively. An refers to an adress register.
     // Dn refers to a data register. Xn referes to either. S refers to the size of the operand in bytes (1, 2 or 4)
-    bool mem_access = true;
-    uint32_t ea; // Effective address
+    operand op;
+    op.mem_access = true;
     uint16_t ext_word;
     BEW bew; // Brief extension word
     switch(M){
         case 0b000: // Dn / <ea> = Dn / Data register direct
-            mem_access = false;
-            if (write)
-                write_Dn(*buf, Xn, size);
-            else
-                *buf = read_Dn(Xn, size);
+            op.mem_access = false;
+            op.dataReg = true;
+            op.n = Xn;
+            if (!addressOnly)
+                op.value = read_Dn(Xn, size);
             break;
         case 0b001: // An / <ea> = An / Adress register direct
-            mem_access = false;
-            if (write)
-                write_An(*buf, Xn, size);
-            else
-                *buf = read_An(Xn, size);
+            op.dataReg = false;
+            op.n = Xn;
+            op.mem_access = false;
+            if (!addressOnly)
+                op.value = read_An(Xn, size);
             break;
         case 0b010: // (An) / <ea> = [An] / Adress register indirect
-            ea = cpu.a[Xn];
+            op.address = cpu.a[Xn];
             break;
         case 0b011: // (An)+ / <ea> = [An] ; An <- [An] + S / Indirect with postincrement
             // TODO: If register is A7 (stack pointer), it is always kept aligned (never add only 1)
-            ea = cpu.a[Xn];
+            op.address = cpu.a[Xn];
             cpu.a[Xn] += nbytes;
             // TODO: Modify flags for postincrement and predecrement
             break;
         case 0b100: // -(An) / An <- [An] - S ; <ea> = [An] / Indirect with predecrement
             cpu.a[Xn] -= nbytes;
-            ea = cpu.a[Xn];
+            op.address = cpu.a[Xn];
             break;
         case 0b101: // W(An) / <ea> = W + [An] / Indirect with displacement
-            // TODO: Test negative displacement
-            ea = ((int16_t) fetch_data(WORD)) + cpu.a[Xn];
+            op.address = fetch_data(WORD) + cpu.a[Xn];
             break;
         case 0b110: // B(An, Xn.S) / <ea> = B + [An] + [Xn] / Indirect with index
             ext_word = fetch_data(WORD);
             bew = *((BEW*) &ext_word);
-            ea = ((int8_t) bew.displacement) + cpu.a[Xn];
+            op.address = ((int8_t) bew.displacement) + cpu.a[Xn];
 
             uint8_t s;
             if (bew.lon)
@@ -277,26 +280,25 @@ int access_operand(uint32_t* buf, uint8_t size, uint16_t allowed_addr_modes, uin
                 s = 0b01;
 
             if (bew.mode) // mode=1 -> An, mode=0 -> Dn
-                ea += read_An(bew.n, s);
+                op.address += read_An(bew.n, s);
             else
-                ea += read_Dn(bew.n, s);
+                op.address += read_Dn(bew.n, s);
             break;
         case 0b111:
             switch(Xn) {
                 case 0b000: // W / <ea> = [W] / Absolute
-                        ea = fetch_data(WORD);
+                        op.address = fetch_data(WORD);
                     break;
                 case 0b001: // L / <ea> = [L] / Absolute long
-                        ea = fetch_data(LONG);
+                        op.address = fetch_data(LONG);
                     break;
                 case 0b010: // W(PC) / <ea> = W + [PC] / relative
-                        // TODO: Test negative displacement
-                        ea = ((int16_t) fetch_data(WORD)) + cpu.pc;
+                        op.address = fetch_data(WORD) + cpu.pc;
                     break;
                 case 0b011: // B(PC, Xn.S) / <ea> = B + [PC] + [Xn] / relative with offset
                     ext_word = fetch_data(WORD);
                     bew = *((BEW*) &ext_word);
-                    ea = ((int8_t) bew.displacement) + cpu.pc;
+                    op.address = ((int8_t) bew.displacement) + cpu.pc;
 
                     uint8_t s;
                     if (bew.lon)
@@ -305,24 +307,37 @@ int access_operand(uint32_t* buf, uint8_t size, uint16_t allowed_addr_modes, uin
                         s = 0b01;
 
                     if (bew.mode) // mode=1 -> An, mode=0 -> Dn
-                        ea += read_An(bew.n, s);
+                        op.address += read_An(bew.n, s);
                     else
-                        ea += read_Dn(bew.n, s);
+                        op.address += read_Dn(bew.n, s);
                     break;
                 case 0b100: // #k / <ea> = [PC] ; PC <- [PC] + S / Immediate
-                        *buf = fetch_data(size);
+                    op.mem_access = false;
+                    op.value = fetch_data(size);
                     break;
             }
             break;
     }
 
-    if (mem_access) { // If it wasn't a direct register operation, we need to read or write to the ea
-        fprintf(stderr, "Effective address calculated: %x\n", ea);
-        if (write)
-            write_mem(ea, size, *buf);
-        else
-            *buf = read_mem(ea, size);
+    fprintf(stderr, "Effective address calculated: %x\n", op.address);
+    if (op.mem_access && !addressOnly) { // If it wasn't a direct register operation, we need to read the value from memory
+        op.value = read_mem(op.address, size);
     }
+    return op;
+}
 
-    return 0;
+/* --- WRITE_OPERAND ----------------------------------------------------------------------------------
+ * This function simply writes the data in the operand struct to memory or to the appropiate register.
+ * read_operand is used to obtain the operand struct, which indicates whether we need to write to a
+ * register or to memory, and the effective address in the later case.
+*/
+void write_operand(operand op, uint8_t size) {
+    if (op.mem_access)
+        write_mem(op.address, size, op.value);
+    else {
+        if (op.dataReg)
+            write_Dn(op.value, op.n, size);
+        else
+            write_An(op.value, op.n, size);
+    }
 }

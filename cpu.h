@@ -5,14 +5,15 @@
 #include<string.h>
 #include <math.h>
 
-#define ALLOW_ALL 0x1FFF
-#define ALLOW_MEM_ALT 0x03FC  // Allow only memory alterable adressing modes
-#define ALLOW_MEM_ALT_DN 0x03FD // Also allow data register direct
-#define ALLOW_NO_AN 0x1FFFD
-
 #define BYTE 0b00
 #define WORD 0b01
 #define LONG 0b10
+
+#define FLAGX 0b00010000 // Extend
+#define FLAGN 0b00001000 // Negative
+#define FLAGZ 0b00000100 // Zero
+#define FLAGV 0b00000010 // Overflow
+#define FLAGC 0b00000001 // Carry
 
 /* The following structs are used to ease the manipulation of bit fields, avoiding
  * unnecessary bit operations. All fields are in reverse order, since struct fields
@@ -64,6 +65,14 @@ typedef struct BEW { // Brief extension word (Indirect and relative with index a
     uint16_t mode : 1; // 0=Dn, 1=An
 } BEW;
 
+typedef struct operand {
+    uint32_t value;
+    uint32_t address;
+    bool mem_access;
+    bool dataReg; // Dn if true, An otherwise.
+    uint8_t n;
+} operand;
+
 CPU* initCpu();
 int run_program(uint32_t entryPoint);
 void decode(INS ins);
@@ -75,7 +84,8 @@ void write_Dn(uint32_t data, uint8_t n, uint8_t size);
 void write_An(uint32_t data, uint8_t n, uint8_t size);
 uint32_t read_Dn(uint8_t n, uint8_t size);
 uint32_t read_An(uint8_t n, uint8_t size);
-int access_operand(uint32_t* buf, uint8_t size, uint16_t allowed_addr_modes, uint8_t M, uint8_t Xn, bool write);
+operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool adressOnly);
+void write_operand(operand op, uint8_t size);
 
 // The following structs break the 16-bit instructions into different fields.
 // For instance, INS31233 would break the instructions into the following fields:
