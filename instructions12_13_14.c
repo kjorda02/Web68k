@@ -1,4 +1,5 @@
 #include "instructions.h"
+#include "util.h"
 
 /* --- DECODE_OP12, DECODE_OP13, DECODE_OP14  -------------------------------------------------------
  * Decode instructions with opcode 1100, 1101 and 1110, respectively. Calls the appropiate funnction
@@ -85,14 +86,39 @@ void AND(INS31233 ins, CPU* cpu) {
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1101 ======================
-void add(INS31233 ins, CPU* cpu) {
 
+void add(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+
+    // <ea> + Dn -> Dn
+    operand srcOp = read_operand(size, ins.f4, ins.f5, false); // Read <ea>
+    operand dstOp = read_operand(size, 0b000, ins.f1, false); // Read Dn
+
+    if (ins.f2) { // Dn + <ea> -> <ea>
+        operand aux = srcOp;
+        srcOp = dstOp;
+        dstOp = aux;
+    }
+    set_flags_add(srcOp.value, dstOp.value, size, cpu);
+
+    dstOp.value = srcOp.value + dstOp.value;
+    write_operand(dstOp, size);
 }
 void addx(INS31233 ins, CPU* cpu) {
 
 }
-void adda(INS31233 ins, CPU* cpu) {
 
+// Does not alter condition codes
+void adda(INS31233 ins, CPU* cpu) {
+    uint8_t size = WORD;
+    if (ins.f2)
+        size = LONG;
+
+    operand srcOp = read_operand(size, ins.f4, ins.f5, false);
+    operand dstOp = read_operand(size, 0b001, ins.f1, false);
+
+    dstOp.value = srcOp.value + dstOp.value;
+    write_operand(dstOp, size);
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1110 ======================

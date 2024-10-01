@@ -1,4 +1,5 @@
-#include "cpu.h"
+#pragma once
+    #include "cpu.h"
 
 void decode_op0(INS i, CPU* cpu);
 void decode_op4(INS i, CPU* cpu);

@@ -1,4 +1,3 @@
-#include "instructions.h"
 #include "util.h"
 
 static CPU cpu;
@@ -10,7 +9,7 @@ CPU* initCpu() {
     for (int i = 0; i < 8; i++) {
         cpu.a[i] = 0;
     }
-    CCR ccr = {0,0,1,0,0,0};
+    CCR ccr = {0,0,0,0,0,0};
     SR sr = {ccr, 0, 0, 0, 0, 0};
     cpu.sr = sr;
     cpu.pc = cpu.cycles = 0;
@@ -63,16 +62,16 @@ uint32_t read_mem(uint32_t pos, uint8_t size) {
     uint8_t bytes[4] = {cpu.ram[pos+3],cpu.ram[pos+2],cpu.ram[pos+1], cpu.ram[pos]};
     uint32_t data = *((uint32_t*) &bytes);
 
-    if (size == 0b00) { // Byte
+    if (size == BYTE) {
         data >>= 24;
         return (int8_t) (data & 0x000000FF); // Casting to signed int for sign extension
     }
-    else if (size == 0b01) { // Word
+    else if (size == WORD) {
         data >>= 16;
         data = (int16_t) (data & 0x0000FFFF);
         return data;
     }
-    else if (size == 0b10) { // Long
+    else if (size == LONG) {
         return data;
     }
     else {
@@ -92,14 +91,14 @@ void write_mem(uint32_t pos, uint8_t size, uint32_t data) {
         logmsg(ERROR, "cpu.c:write_mem", buffer);
         exit(EXIT_FAILURE);
     }
-    if (size == 0b00) // Byte size. Write least significant byte to the position
+    if (size == BYTE) // Byte size. Write least significant byte to the position
         cpu.ram[pos]   =  data & 0xFF;
 
-    else if (size == 0b01){ // Word size. Now the memory position contains the second-to-last LSB
+    else if (size == WORD){ // Word size. Now the memory position contains the second-to-last LSB
         cpu.ram[pos]   = (data >> 8) & 0xFF; // And the LSB is in the next position
         cpu.ram[pos+1] =  data & 0xFF;
     }
-    else if (size == 0b10) { // And so on
+    else if (size == LONG) { // And so on
         cpu.ram[pos]   = (data >> 24) & 0xFF;
         cpu.ram[pos+1] = (data >> 16) & 0xFF;
         cpu.ram[pos+2] = (data >> 8) & 0xFF;
@@ -113,7 +112,7 @@ void write_mem(uint32_t pos, uint8_t size, uint32_t data) {
 
 uint32_t fetch_data(uint8_t size) {
     uint32_t data;
-    if (size == 0b00) { // Byte
+    if (size == BYTE) { // Byte
         data = read_mem(cpu.pc, WORD);
         data &= 0x00FF; // Byte is stored in low part of word
         data = (int8_t) data; // Sign extend
@@ -122,9 +121,9 @@ uint32_t fetch_data(uint8_t size) {
         data = read_mem(cpu.pc, size);
 
     cpu.pc += 2; // Incremented at least 2 (for byte and word operations)
-    if (size == 0b10)
+    if (size == LONG)
         cpu.pc += 2; // Another 2 if long
-    else if (size > 0b10){
+    else if (size > LONG){
         logmsg(ERROR, "cpu.c:fetch_data", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
@@ -148,11 +147,11 @@ void write_Dn(uint32_t data, uint8_t n, uint8_t size) {
 
 void write_An(uint32_t data, uint8_t n, uint8_t size) {
     uint32_t dataext = data;
-    if (size == 0b01) { // Word
+    if (size == WORD) {
         dataext &= 0x0000FFFF;
         dataext = (int16_t) dataext; // SIGN EXTEND VERY IMPORTANT!
     }
-    else if (size != 0b10) {
+    else if (size != LONG) {
         logmsg(ERROR, "cpu.c:read_An", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
@@ -160,13 +159,13 @@ void write_An(uint32_t data, uint8_t n, uint8_t size) {
 }
 
 uint32_t read_Dn(uint8_t n, uint8_t size) {
-    if (size == 0b00) { // Byte
+    if (size == BYTE) { // Byte
         return (int8_t) (cpu.d[n] & 0x000000FF); // Casting to signed int for sign extension
     }
-    else if (size == 0b01) { // Word
+    else if (size == WORD) {
         return (int16_t) (cpu.d[n] & 0x0000FFFF);
     }
-    else if (size == 0b10) { // Long
+    else if (size == LONG) {
         return cpu.d[n];
     }
     else {
@@ -176,10 +175,10 @@ uint32_t read_Dn(uint8_t n, uint8_t size) {
 }
 
 uint32_t read_An(uint8_t n, uint8_t size) {
-    if (size == 0b01) { // Word
+    if (size == WORD) {
         return (int16_t) (cpu.d[n] & 0x0000FFFF); // Casting to signed int for sign extension
     }
-    else if (size == 0b10) { // Long
+    else if (size == LONG) { // Long
         return cpu.d[n];
     }
     else {
@@ -275,9 +274,9 @@ operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool addressOnly) {
 
             uint8_t s;
             if (bew.lon)
-                s = 0b10;
+                s = LONG;
             else
-                s = 0b01;
+                s = WORD;
 
             if (bew.mode) // mode=1 -> An, mode=0 -> Dn
                 op.address += read_An(bew.n, s);
@@ -293,18 +292,20 @@ operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool addressOnly) {
                         op.address = fetch_data(LONG);
                     break;
                 case 0b010: // W(PC) / <ea> = W + [PC] / relative
-                        op.address = fetch_data(WORD) + cpu.pc;
-                    break;
+                        op.address = cpu.pc; // Important that we store the PC before fetching the displacement
+                        op.address += fetch_data(WORD); // As this will increment the PC
+                        break;
                 case 0b011: // B(PC, Xn.S) / <ea> = B + [PC] + [Xn] / relative with offset
+                    op.address = cpu.pc;
                     ext_word = fetch_data(WORD);
                     bew = *((BEW*) &ext_word);
-                    op.address = ((int8_t) bew.displacement) + cpu.pc;
+                    op.address += ((int8_t) bew.displacement);
 
                     uint8_t s;
                     if (bew.lon)
-                        s = 0b10;
+                        s = LONG;
                     else
-                        s = 0b01;
+                        s = WORD;
 
                     if (bew.mode) // mode=1 -> An, mode=0 -> Dn
                         op.address += read_An(bew.n, s);
@@ -319,8 +320,8 @@ operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool addressOnly) {
             break;
     }
 
-    fprintf(stderr, "Effective address calculated: %x\n", op.address);
     if (op.mem_access && !addressOnly) { // If it wasn't a direct register operation, we need to read the value from memory
+        fprintf(stderr, "Effective address calculated: %x\n", op.address);
         op.value = read_mem(op.address, size);
     }
     return op;

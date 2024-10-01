@@ -1,4 +1,5 @@
 #include "instructions.h"
+#include "util.h"
 
 /* --- DECODE_OP8, DECODE_OP9, DECODE_OP11  -------------------------------------------------------
  * Decode instructions with opcode 1000, 1001 and 1011, respectively. Calls the appropiate funnction
@@ -81,13 +82,39 @@ void OR(INS31233 ins, CPU* cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1011 ======================
 void sub(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
 
+    // <ea> + Dn -> Dn
+    operand srcOp = read_operand(size, ins.f4, ins.f5, false); // Read <ea>
+    operand dstOp = read_operand(size, 0b000, ins.f1, false); // Read Dn
+
+    // Dn + <ea> -> <ea>
+    if (ins.f2) {
+        operand aux = srcOp;
+        srcOp = dstOp;
+        dstOp = aux;
+    }
+
+    set_flags_sub(srcOp.value, dstOp.value, size, cpu);
+
+    dstOp.value = dstOp.value - srcOp.value;
+    write_operand(dstOp, size);
 }
 void subx(INS31233 ins, CPU* cpu) {
 
 }
-void suba(INS31233 ins, CPU* cpu) {
 
+// Does not alter condition codes
+void suba(INS31233 ins, CPU* cpu) {
+    uint8_t size = WORD;
+    if (ins.f2)
+        size = LONG;
+
+    operand srcOp = read_operand(size, ins.f4, ins.f5, false);
+    operand dstOp = read_operand(size, 0b001, ins.f1, false);
+
+    dstOp.value -= srcOp.value;
+    write_operand(dstOp, size);
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1011 ======================

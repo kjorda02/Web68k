@@ -217,7 +217,11 @@ void movem(INS4233 ins, CPU* cpu) {
 
 }
 void lea(INS3333 ins, CPU* cpu) {
+    operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
+    operand dstOp = read_operand(LONG, 0b001, ins.f1,true);
 
+    dstOp.value = srcOp.address;
+    write_operand(dstOp, LONG);
 }
 void chk(INS3333 ins, CPU* cpu) {
 

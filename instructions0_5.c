@@ -1,4 +1,5 @@
 #include "instructions.h"
+#include "util.h"
 
 /* --- DECODE_OP0, DECODE OP5 ---------------------------------------------------------------------------
  * Decode instructions with opcode 0000 and 0101, respectively.. Calls the appropiate funnction to run
@@ -78,7 +79,14 @@ void andi(INS31233 ins, CPU* cpu) {
 }
 
 void subi(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+    operand srcOp = read_operand(size, 0b111, 0b100, false);
+    operand dstOp = read_operand(size, ins.f4, ins.f5, false);
+    uint32_t op2 = dstOp.value;
+    dstOp.value -= srcOp.value;
+    write_operand(dstOp, size);
 
+    cpu->sr.ccr.overflow = check_overflow(-ins.f1, op2, dstOp.value, size);
 }
 
 void addi(INS31233 ins, CPU* cpu) {
@@ -101,11 +109,28 @@ void bop(INS31233 Ins, CPU* cpu) {
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0101 ======================
 
 void addq(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+    operand dstOp = read_operand(size, ins.f4, ins.f5, false);
 
+    // Condition codes not altered if destination is address register
+    if (dstOp.mem_access || dstOp.dataReg)
+        set_flags_add(ins.f1, dstOp.value, size, cpu);
+
+    dstOp.value += ins.f1;
+    write_operand(dstOp, size);
 }
+
 void subq(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+    operand dstOp = read_operand(size, ins.f4, ins.f5, false);
 
+    if (dstOp.mem_access || dstOp.dataReg)
+        set_flags_sub(ins.f1, dstOp.value, size, cpu);
+
+    dstOp.value -= ins.f1;
+    write_operand(dstOp, size);
 }
+
 void Scc(INS4233 ins, CPU* cpu) {
 
 }

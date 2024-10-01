@@ -19,10 +19,10 @@ void print_registers(CPU* cpu) {
     printf(BLUE"╠════════════════╦═════════════════╦═════════════════╦════════════════╣\n");
     for (int i = 0; i < 4; i++) {
         printf(BLUE"║");
-        printf(BOLD_GREEN " [D%d]=%08x" BLUE "  ║ ", i, cpu->d[i]);
-        printf(BOLD_GREEN " [D%d]=%08x" BLUE "  ║ ", i+4, cpu->d[i+4]);
-        printf(BOLD_GREEN " [A%d]=%08x" BLUE "  ║ ", i, cpu->a[i]);
-        printf(BOLD_GREEN " [A%d]=%08x" BLUE" ║\n", i+4, cpu->a[i+4]);
+        printf(BOLD_GREEN " [D%d]=%08X" BLUE "  ║ ", i, cpu->d[i]);
+        printf(BOLD_GREEN " [D%d]=%08X" BLUE "  ║ ", i+4, cpu->d[i+4]);
+        printf(BOLD_GREEN " [A%d]=%08X" BLUE "  ║ ", i, cpu->a[i]);
+        printf(BOLD_GREEN " [A%d]=%08X" BLUE" ║\n", i+4, cpu->a[i+4]);
         if (i < 3)
             printf(BLUE"╠════════════════╬═════════════════╬═════════════════╬════════════════╣\n");
         else
