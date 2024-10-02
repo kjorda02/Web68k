@@ -125,7 +125,7 @@ typedef struct INS84 {
 
 // Used by branch instructions
 typedef struct INS48 {
-    uint16_t dir : 8;
+    uint16_t disp : 8;
     uint16_t cond : 4;
     uint16_t opcode : 4;
 } INS48;

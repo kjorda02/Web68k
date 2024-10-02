@@ -1,4 +1,5 @@
 #include "instructions.h"
+#include "util.h"
 
 
 /* --- DECODE_OP4 -----------------------------------------------------------------------------------
@@ -144,13 +145,33 @@ void negx(INS4233 ins, CPU* cpu) {
 
 }
 void clr(INS4233 ins, CPU* cpu) {
+    uint8_t size = ins.f2;
+    operand dstOp = read_operand(size, ins.f3, ins.f4, true);
+    dstOp.value = 0;
+    write_operand(dstOp, size);
 
+    cpu->sr.ccr.negative = 0;
+    cpu->sr.ccr.zero = 1;
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
 }
 void neg(INS4233 ins, CPU* cpu) {
-
+    uint8_t size = ins.f2;
+    operand dstOp = read_operand(size, ins.f3, ins.f4, false);
+    set_flags_sub(dstOp.value, 0, size, cpu);
+    dstOp.value = -dstOp.value;;
+    write_operand(dstOp, size);
 }
 void NOT(INS4233 ins, CPU* cpu){
+    uint8_t size = ins.f2;
+    operand dstOp = read_operand(size, ins.f3, ins.f4, false);
+    dstOp.value = ~dstOp.value;
+    write_operand(dstOp, size);
 
+    cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+    cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
 }
 void ext(INS4233 ins, CPU* cpu) {
 
@@ -171,7 +192,9 @@ void tas(INS4233 ins, CPU* cpu) {
 
 }
 void tst(INS4233 ins, CPU* cpu) {
-
+    uint8_t size = ins.f2;
+    operand srcOp = read_operand(size, ins.f3, ins.f4, false);
+    set_flags_sub(0, srcOp.value, size, cpu);
 }
 void trap(INS84 ins, CPU* cpu) {
     printf("TRAP\n");

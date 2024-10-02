@@ -82,6 +82,26 @@ void exg(INS31233 ins, CPU* cpu) {
 
 }
 void AND(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+
+    // <ea> + Dn -> Dn
+    operand srcOp = read_operand(size, ins.f4, ins.f5, false); // Read <ea>
+    operand dstOp = read_operand(size, 0b000, ins.f1, false); // Read Dn
+
+    // Dn + <ea> -> <ea>
+    if (ins.f2) {
+        operand aux = srcOp;
+        srcOp = dstOp;
+        dstOp = aux;
+    }
+    dstOp.value = srcOp.value & dstOp.value;
+    write_operand(dstOp, size);
+
+    cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+    cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
+
 
 }
 

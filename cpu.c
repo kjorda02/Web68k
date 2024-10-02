@@ -132,7 +132,7 @@ uint32_t fetch_data(uint8_t size) {
 
 /* --- WRITE_DN ----------------------------------------------------------------------------------
  * Writes data to a data register, taking into account that if a byte or word is written, the
- * remaining more significant bytes must remain unchanged.
+ * remaining more significant bytes must remain unchanged (NO SIGN EXTENSION!).
 */
 void write_Dn(uint32_t data, uint8_t n, uint8_t size) {
     uint8_t bytes = size_to_bytes(size);
@@ -140,51 +140,29 @@ void write_Dn(uint32_t data, uint8_t n, uint8_t size) {
     mask >>= (4 - bytes)*8; // 0x000000FF for byte, 0x0000FFFF for word, and 0xFFFFFFFF for long
     uint32_t mask2 = ~mask; // Invert all bits
 
-    data &= mask; // Just in case, clear the higher bytes that don't contain data'
+    data &= mask; // Just in case, clear the higher bytes that don't contain data
     cpu.d[n] &= mask2; // Clear all the bytes that are to be modified
     cpu.d[n] |= data; // Set all the 1s that are set in the data in the register
 }
 
 void write_An(uint32_t data, uint8_t n, uint8_t size) {
-    uint32_t dataext = data;
-    if (size == WORD) {
-        dataext &= 0x0000FFFF;
-        dataext = (int16_t) dataext; // SIGN EXTEND VERY IMPORTANT!
-    }
-    else if (size != LONG) {
-        logmsg(ERROR, "cpu.c:read_An", "Invalid size argument");
+    if (size == BYTE) {
+        logmsg(ERROR, "cpu.c:write_An", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
-    cpu.a[n] = dataext;
+    cpu.a[n] = truncate_val(data, size);
 }
 
 uint32_t read_Dn(uint8_t n, uint8_t size) {
-    if (size == BYTE) { // Byte
-        return (int8_t) (cpu.d[n] & 0x000000FF); // Casting to signed int for sign extension
-    }
-    else if (size == WORD) {
-        return (int16_t) (cpu.d[n] & 0x0000FFFF);
-    }
-    else if (size == LONG) {
-        return cpu.d[n];
-    }
-    else {
-        logmsg(ERROR, "cpu.c:read_Dn", "Invalid size argument");
-        exit(EXIT_FAILURE);
-    }
+    return truncate_val(cpu.d[n], size); // Clears higher bits and sign extends
 }
 
 uint32_t read_An(uint8_t n, uint8_t size) {
-    if (size == WORD) {
-        return (int16_t) (cpu.d[n] & 0x0000FFFF); // Casting to signed int for sign extension
-    }
-    else if (size == LONG) { // Long
-        return cpu.d[n];
-    }
-    else {
+    if (size == BYTE) {
         logmsg(ERROR, "cpu.c:read_An", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
+    return truncate_val(cpu.d[n], size);
 }
 
 /* --- DECODE ----------------------------------------------------------------------------------

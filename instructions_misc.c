@@ -24,10 +24,28 @@ void move(INS i, CPU* cpu) {
 }
 
 void moveq(INS i, CPU* cpu) {
-    printf("MOVEQ\n");
     INS318 ins = *(INS318*) &i;
+    operand dstOp = read_operand(LONG, 0b000, ins.f1, true);
+    dstOp.value = (int8_t) ins.f3; // Casting to signed int for sign extension
+
+    write_operand(dstOp, LONG);
+
+    cpu->sr.ccr.negative = get_sign(dstOp.value, BYTE);
+    cpu->sr.ccr.zero = (dstOp.value == 0);
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
 }
 
 void Bcc(INS i, CPU* cpu) {
     INS48 ins = *(INS48*) &i;
+    if (!check_condition(ins.cond, cpu->sr.ccr))
+        return;
+
+    if (ins.disp == 0) {
+        operand srcOp = read_operand(WORD, 0b111, 0b100, false);
+        cpu->pc += (int16_t) srcOp.value;
+    }
+    else {
+        cpu->pc += (int8_t) ins.disp;
+    }
 }

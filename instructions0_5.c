@@ -61,36 +61,68 @@ void decode_op5(INS i, CPU* cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0000 ======================
 
-void ori(INS31233 Ins, CPU* cpu) {
-    // TODO: If operand in fields 4 and 5 indicates immediate, then the operation is done on
-    // the SR (destination operand cannot be immedate). Check field 3 as usual to determine if
-    // operation is done only on CCR or on the whole SR
+void ori(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+    operand srcOp = read_operand(size, 0b111, 0b100, false);
 
-    // if (!(ins.f4 == 0b111 && ins.f5 == 0b100))
-    //     ori(i, cpu);
-    // else if (ins.f3 == 0b00)
-    //     ori_to_ccr(i, cpu);
-    // else if (ins.f3 == 0b01)
-    //     ori_to_sr(i, cpu);
+     // If operand in fields 4 and 5 indicates immediate, then the operation is done on the SR
+    if (ins.f4 == 0b111 && ins.f5 == 0b100) { // (destination operand cannot be immedate)
+        uint16_t sr = *((uint16_t*) &cpu->sr);
+        sr |= srcOp.value; // It will be done on CCR or entire SR depending on the size of immediate operand
+        cpu->sr = *((SR*) &sr);
+    }
+    else {
+        operand dstOp = read_operand(size, ins.f4, ins.f5, false);
+        dstOp.value |= srcOp.value;
+        write_operand(dstOp, size);
+        cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+        cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
+        cpu->sr.ccr.overflow = 0;
+        cpu->sr.ccr.carry = 0;
+    }
 }
 
 void andi(INS31233 ins, CPU* cpu) {
-    // TODO: Check fields 4 and 5 as in ori
+    uint8_t size = ins.f3;
+    operand srcOp = read_operand(size, 0b111, 0b100, false);
+
+    // If operand in fields 4 and 5 indicates immediate, then the operation is done on the SR
+    if (ins.f4 == 0b111 && ins.f5 == 0b100) { // (destination operand cannot be immedate)
+        uint16_t sr = *((uint16_t*) &cpu->sr);
+        sr &= srcOp.value; // It will be done on CCR or entire SR depending on the size of immediate operand
+        cpu->sr = *((SR*) &sr);
+    }
+    else {
+        operand dstOp = read_operand(size, ins.f4, ins.f5, false);
+        dstOp.value &= srcOp.value;
+        write_operand(dstOp, size);
+        cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+        cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
+        cpu->sr.ccr.overflow = 0;
+        cpu->sr.ccr.carry = 0;
+    }
 }
 
 void subi(INS31233 ins, CPU* cpu) {
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
-    uint32_t op2 = dstOp.value;
+
+    set_flags_sub(srcOp.value, dstOp.value, size, cpu);
+
     dstOp.value -= srcOp.value;
     write_operand(dstOp, size);
-
-    cpu->sr.ccr.overflow = check_overflow(-ins.f1, op2, dstOp.value, size);
 }
 
 void addi(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+    operand srcOp = read_operand(size, 0b111, 0b100, false);
+    operand dstOp = read_operand(size, ins.f4, ins.f5, false);
 
+    set_flags_add(srcOp.value, dstOp.value, size, cpu);
+
+    dstOp.value += srcOp.value;
+    write_operand(dstOp, size);
 }
 
 void eori(INS31233 ins, CPU* cpu) {
@@ -98,7 +130,10 @@ void eori(INS31233 ins, CPU* cpu) {
 }
 
 void cmpi(INS31233 ins, CPU* cpu) {
-
+    uint8_t size = ins.f3;
+    operand srcOp = read_operand(size, 0b111, 0b100, false);
+    operand dstOp = read_operand(size, ins.f4, ins.f5, false);
+    set_flags_sub(srcOp.value, dstOp.value, size, cpu);
 }
 
 void bop(INS31233 Ins, CPU* cpu) {
