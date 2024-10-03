@@ -11,6 +11,7 @@ int main(int argc, char* argv[]) {
     int statusCode = run_program(entryPoint);
 
     print_registers(cpu);
+    return statusCode;
 }
 
 void print_registers(CPU* cpu) {

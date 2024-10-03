@@ -44,20 +44,13 @@ uint32_t truncate_val(uint32_t data, uint8_t size) {
     }
 }
 
-// Returns 0 for positive, 1 for negative
-uint8_t get_sign(uint32_t val, uint8_t size) {
-    unsigned int displ = 8*size_to_bytes(size) - 1;
-    return val & (1 << displ);
-}
-
 uint8_t check_overflow(uint32_t a, uint32_t b, uint32_t res, uint8_t size) {
-    uint8_t sign1 = get_sign(a, size);
+    bool sign_a = ((int32_t) a) < 0;
+    bool sign_b = ((int32_t) b) < 0;
+    bool sign_res = ((int32_t) res) < 0;
 
     // If both operands have the same sign but the result has different sign
-    if (sign1==get_sign(b, size) && get_sign(res, size) != sign1)
-        return 1;
-    else
-        return 0;
+    return (sign_a == sign_b && sign_res != sign_a);
 }
 
 uint8_t check_carry(uint32_t a, uint32_t b, uint32_t res, uint8_t size, bool substraction) {
@@ -78,20 +71,24 @@ uint8_t check_carry(uint32_t a, uint32_t b, uint32_t res, uint8_t size, bool sub
 
 void set_flags_add(uint32_t src, uint32_t dst, uint8_t size, CPU* cpu) {
     uint32_t res = src + dst;
+    res = truncate_val(res, size); // Truncate and sign extend
+
     cpu->sr.ccr.overflow = check_overflow(src, dst, res, size);
     cpu->sr.ccr.carry = check_carry(src, dst, res, size, false);
     cpu->sr.ccr.extend = cpu->sr.ccr.carry;
-    cpu->sr.ccr.negative = get_sign(res, size);
-    cpu->sr.ccr.zero = (truncate_val(res, size) == 0); // truncate so it's 0 in case of carry
+    cpu->sr.ccr.negative = (res < 0);
+    cpu->sr.ccr.zero = (res == 0);
 }
 
 void set_flags_sub(uint32_t src, uint32_t dst, uint8_t size, CPU* cpu) {
     uint32_t res = dst - src;
+    res = truncate_val(res, size); // Truncate and sign extend
+
     cpu->sr.ccr.overflow = check_overflow(-src, dst, res, size);
     cpu->sr.ccr.carry = check_carry(src, dst, res, size, true);
     cpu->sr.ccr.extend = cpu->sr.ccr.carry;
-    cpu->sr.ccr.negative = get_sign(res, size);
-    cpu->sr.ccr.zero = (truncate_val(res, size) == 0);
+    cpu->sr.ccr.negative = (res < 0);
+    cpu->sr.ccr.zero = (res == 0);
 }
 
 bool check_condition(uint8_t condition, CCR ccr) {
@@ -101,13 +98,13 @@ bool check_condition(uint8_t condition, CCR ccr) {
         case 0b0001: // False
             break;
         case 0b0010:
-            return ccr.carry || !ccr.zero; // HI (Higher)
+            return !(ccr.carry || ccr.zero); // HI (Higher)
         case 0b0011:
             return ccr.carry || ccr.zero; // LS (Lower or same)
         case 0b0100:
-            return !ccr.carry; // CC (Carry clear)
+            return !ccr.carry; // HS/CC (Higher or same than / carry clear)
         case 0b0101:
-            return ccr.carry; // CS (Carry set)
+            return ccr.carry; // LO/CS (Lower than / carry set)
         case 0b0110:
             return !ccr.zero; // NE (Not equal)
         case 0b0111:
@@ -121,13 +118,13 @@ bool check_condition(uint8_t condition, CCR ccr) {
         case 0b1011:
             return ccr.negative; // MI (Negative)
         case 0b1100:
-            return ccr.negative ^ !ccr.overflow; // GE (Greater or equal)
+            return !(ccr.negative ^ ccr.overflow); // GE (Greater or equal)
         case 0b1101:
             return ccr.negative ^ ccr.overflow; // LT (Less than)
         case 0b1110:
-            return ccr.zero || !(ccr.negative ^ ccr.overflow); // GT (Greater than)
+            return !(ccr.zero | ccr.negative ^ ccr.overflow); // GT (Greater than)
         case 0b1111: // LE (Less or equal)
-            return ccr.zero || (ccr.negative ^ ccr.overflow);
+            return ccr.zero | ccr.negative ^ ccr.overflow;
     }
     return false;
 }

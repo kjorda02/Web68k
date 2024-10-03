@@ -168,7 +168,7 @@ void NOT(INS4233 ins, CPU* cpu){
     dstOp.value = ~dstOp.value;
     write_operand(dstOp, size);
 
-    cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+    cpu->sr.ccr.negative = ( (int32_t) truncate_val(dstOp.value, size)) < 0;
     cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
     cpu->sr.ccr.overflow = 0;
     cpu->sr.ccr.carry = 0;

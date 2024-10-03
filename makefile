@@ -8,9 +8,11 @@ PROGRAMS=cli_emulator
 OBJS=$(SOURCES:.c=.o)
 
 all: $(OBJS) $(PROGRAMS)
+	@echo -e "\033[1;32m"
 	@echo "----------------------------------------------------------------------------------------------"
 	@echo "                   C CODE COMPILATION COMPLETE. 68K ASSEMBLY BELOW"
 	@echo "----------------------------------------------------------------------------------------------"
+	@echo -e "\033[0m"
 	vasm_m68k_mot prueba.X68 -m68000 -chklabels -nocase -Fsrec -exec=START -o "output"
 
 $(PROGRAMS): $(LIBRARIES) $(INCLUDES)

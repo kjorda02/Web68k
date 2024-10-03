@@ -3,7 +3,6 @@
 
 void move(INS i, CPU* cpu) {
     INS3333 ins = *((INS3333*) &i);
-    uint32_t data;
     uint8_t size = ins.opcode & 0b11; // lower 2 bits of the opcode indicate size
     if (size == 0b01)
         size = BYTE;
@@ -15,12 +14,11 @@ void move(INS i, CPU* cpu) {
     dstOp.value = srcOp.value;
     write_operand(dstOp, size);
 
-    CCR flags = cpu->sr.ccr;
-    flags.overflow = 0;
-    flags.carry = 0;
-
-    flags.negative = get_sign(dstOp.value, size);
-    flags.zero = (dstOp.value == 0);
+    CCR* flags = &cpu->sr.ccr;
+    flags->overflow = 0;
+    flags->carry = 0;
+    flags->negative = ((int32_t) dstOp.value) < 0;
+    flags->zero = (dstOp.value == 0);
 }
 
 void moveq(INS i, CPU* cpu) {
@@ -30,7 +28,7 @@ void moveq(INS i, CPU* cpu) {
 
     write_operand(dstOp, LONG);
 
-    cpu->sr.ccr.negative = get_sign(dstOp.value, BYTE);
+    cpu->sr.ccr.negative = ((int32_t) dstOp.value) < 0;
     cpu->sr.ccr.zero = (dstOp.value == 0);
     cpu->sr.ccr.overflow = 0;
     cpu->sr.ccr.carry = 0;
@@ -42,8 +40,9 @@ void Bcc(INS i, CPU* cpu) {
         return;
 
     if (ins.disp == 0) {
+        uint32_t pcval = cpu->pc; // IMPORTANT: SAVE VALUE OF PC BEFORE READING DISPLACEMENT VALUE
         operand srcOp = read_operand(WORD, 0b111, 0b100, false);
-        cpu->pc += (int16_t) srcOp.value;
+        cpu->pc += pcval + ((int16_t) srcOp.value);
     }
     else {
         cpu->pc += (int8_t) ins.disp;

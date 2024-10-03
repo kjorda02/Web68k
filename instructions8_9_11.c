@@ -92,7 +92,7 @@ void OR(INS31233 ins, CPU* cpu) {
     dstOp.value = srcOp.value | dstOp.value;
     write_operand(dstOp, size);
 
-    cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+    cpu->sr.ccr.negative = ( (int32_t) truncate_val(dstOp.value, size)) < 0;
     cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
     cpu->sr.ccr.overflow = 0;
     cpu->sr.ccr.carry = 0;
@@ -144,10 +144,14 @@ void cmpm(INS31233 ins, CPU* cpu) {
 }
 void cmp(INS31233 ins, CPU* cpu) {
     uint8_t size = ins.f3;
-
     operand srcOp = read_operand(size, ins.f4, ins.f5, false); // Read <ea>
     operand dstOp = read_operand(size, 0b000, ins.f1, false); // Read Dn
-    set_flags_sub(srcOp.value, dstOp.value, size, cpu);
+
+    int32_t res = truncate_val(dstOp.value - srcOp.value, size);
+    cpu->sr.ccr.negative = res < 0;
+    cpu->sr.ccr.zero = res == 0;
+    cpu->sr.ccr.overflow = check_overflow(srcOp.value, dstOp.value, res, size);
+    cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }
 
 void cmpa(INS31233 ins, CPU* cpu) {
@@ -157,5 +161,10 @@ void cmpa(INS31233 ins, CPU* cpu) {
 
     operand srcOp = read_operand(size, ins.f4, ins.f5, false); // Read <ea>
     operand dstOp = read_operand(size, 0b001, ins.f1, false); // Read An
-    set_flags_sub(srcOp.value, dstOp.value, size, cpu);
+
+    int32_t res = truncate_val(dstOp.value - srcOp.value, size);
+    cpu->sr.ccr.negative = res < 0;
+    cpu->sr.ccr.zero = res == 0;
+    cpu->sr.ccr.overflow = check_overflow(srcOp.value, dstOp.value, res, size);
+    cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }

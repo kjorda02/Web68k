@@ -196,9 +196,9 @@ void decode(INS ins) {
 /* --- READ_OPERAND ----------------------------------------------------------------------------------
  * Finds the effective address using the values of (M) and (Xn). Reads the data, if (adressOnly) is  not
  * set. (size) specifies the size of the data to be read (00=Byte, 01=Word, 10=Long). Returns an operand
- * struct, that contains the effective address, and the value of the operand if it was read. It also contains
- * a boolean which indicates whether the data was in memory or in a register. Calling the function with
- * (adressOnly) unset is useful to find the EA of the destination operand, when it does not need to be read.
+ * struct, that contains the effective address, and the value of the operand if it was read (ALWAYS SIGN EXTENDED).
+ * It also contains a boolean which indicates whether the data was in memory or in a register. Calling the function
+ * with (adressOnly) unset is useful to find the EA of the destination operand, when it does not need to be read.
  *
  * WARNING: EXTENSION WORDS AFTER THE INSTRUCTION MUST BE READ IN THE FOLLOWING ORDER:
  *      [1] Instruction specific data (e.g. bit number for BTST, displacement for BRA or immediate data for ADDI)

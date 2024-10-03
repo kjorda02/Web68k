@@ -75,7 +75,7 @@ void ori(INS31233 ins, CPU* cpu) {
         operand dstOp = read_operand(size, ins.f4, ins.f5, false);
         dstOp.value |= srcOp.value;
         write_operand(dstOp, size);
-        cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+        cpu->sr.ccr.negative = ( (int32_t) truncate_val(dstOp.value, size)) < 0;
         cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
         cpu->sr.ccr.overflow = 0;
         cpu->sr.ccr.carry = 0;
@@ -96,7 +96,7 @@ void andi(INS31233 ins, CPU* cpu) {
         operand dstOp = read_operand(size, ins.f4, ins.f5, false);
         dstOp.value &= srcOp.value;
         write_operand(dstOp, size);
-        cpu->sr.ccr.negative = get_sign(dstOp.value, size);
+        cpu->sr.ccr.negative = ( (int32_t) truncate_val(dstOp.value, size)) < 0;
         cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
         cpu->sr.ccr.overflow = 0;
         cpu->sr.ccr.carry = 0;
@@ -133,7 +133,12 @@ void cmpi(INS31233 ins, CPU* cpu) {
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
-    set_flags_sub(srcOp.value, dstOp.value, size, cpu);
+
+    int32_t res = truncate_val(dstOp.value - srcOp.value, size);
+    cpu->sr.ccr.negative = res < 0;
+    cpu->sr.ccr.zero = res == 0;
+    cpu->sr.ccr.overflow = check_overflow(srcOp.value, dstOp.value, res, size);
+    cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }
 
 void bop(INS31233 Ins, CPU* cpu) {
@@ -167,8 +172,23 @@ void subq(INS31233 ins, CPU* cpu) {
 }
 
 void Scc(INS4233 ins, CPU* cpu) {
+    operand dstOp = read_operand(BYTE, ins.f3, ins.f4, true); // Find effective address
+    if (check_condition(ins.f1, cpu->sr.ccr))
+        dstOp.value = 0xFF;
+    else
+        dstOp.value = 0;
 
+    write_operand(dstOp, BYTE);
 }
 void DBcc(INS4233 ins, CPU* cpu) {
+    if (check_condition(ins.f1, cpu->sr.ccr)) return;
 
+    operand op1 = read_operand(WORD, 0b000, ins.f4, false); // Read data register
+    op1.value = ((int16_t) op1.value) - 1;
+    write_operand(op1, WORD);
+    if (((int16_t) op1.value) == -1) return; // If the data register's new value is -1, end the loop'
+
+    uint32_t pcval = cpu->pc; // IMPORTANT: SAVE VALUE OF PC BEFORE READING DISPLACEMENT VALUE
+    operand op2 = read_operand(WORD, 0b111, 0b000, true); // Read displacement (absolute short address)
+    cpu->pc = pcval + ((int16_t) op2.address);
 }
