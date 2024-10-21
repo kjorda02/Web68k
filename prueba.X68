@@ -1,7 +1,7 @@
         ORG $1000
 START:
-        MOVE.L  #$f200,D0
-        BCLR    #8,D0
+        MOVE.L  #2,D0
+        LSL.B   #7,D0
         END START
 
 ; SUBROUTINE TEST #2 (PASSED)

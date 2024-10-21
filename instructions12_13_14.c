@@ -55,16 +55,7 @@ void decode_op14(INS i, CPU* cpu) {
     else  // The destination operand is a data register.
         type = ins.f4 & 0b011;
 
-    switch(type) {
-        case 0b00:
-            ASd(ins, cpu);
-        case 0b01:
-            LSd(ins, cpu);
-        case 0b10:
-            ROXd(ins, cpu);
-        case 0b11:
-            ROd(ins, cpu);
-    }
+    shiftop(ins, cpu, type);
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1100 ======================
@@ -156,17 +147,132 @@ void adda(INS31233 ins, CPU* cpu) {
     write_operand(dstOp, size);
 }
 
+// Arithmetic shift helper function
+uint32_t ashift(CPU* cpu, uint32_t val, bool left, uint8_t count, uint8_t msb) {
+    if (left) { // Left shift
+        bool sign = val>>msb; // Save most significant bit state
+        for ( ; count > 1; count--) {
+            val *= 2;
+            cpu->sr.ccr.overflow |= (val>>msb != sign); // If changed -> overflow
+        }
+        cpu->sr.ccr.extend = val>>msb; // Last bit shifted out
+        cpu->sr.ccr.carry = val>>msb;
+        val *= 2;
+        cpu->sr.ccr.overflow |= (val>>msb != sign); // If changed -> overflow
+    }
+    else { // Right shift
+        for ( ; count > 1; count--) {
+            val /= 2;
+        }
+        cpu->sr.ccr.extend = val & 1; // Last bit shifted out
+        cpu->sr.ccr.carry = val & 1;
+        val /= 2;
+    }
+    cpu->sr.ccr.negative = val>>msb;
+    cpu->sr.ccr.zero = (val & (0xFFFFFFFF>>(32-(msb+1)))) == 0; // Mask in case of left shift
+    return val;
+}
+
+// Logical shift helper function
+uint32_t lshift(CPU* cpu, uint32_t val, bool left, uint8_t count, uint8_t msb) {
+    if (left) {
+        val <<= (count-1);
+        cpu->sr.ccr.extend = val>>msb; // Last bit shifted out
+        cpu->sr.ccr.carry = val>>msb;
+        val <<= 1;
+    }
+    else {
+        val >>= (count-1);
+        cpu->sr.ccr.extend = val & 1; // Last bit shifted out
+        cpu->sr.ccr.carry = val & 1;
+        val >>= 1;
+    }
+    cpu->sr.ccr.negative = val>>msb;
+    cpu->sr.ccr.zero = (val & (0xFFFFFFFF>>(32-(msb+1)))) == 0;
+    cpu->sr.ccr.overflow = 0;
+    return val;
+}
+
+// Rotate helper function
+uint32_t rotate(CPU* cpu, uint32_t val, bool left, uint8_t count, uint8_t msb) {
+    if (left) {
+        val = val<<count | val>>(msb+1-count);
+        cpu->sr.ccr.carry = val & 1;
+    }
+    else {
+        val = val>>count | val<<(msb+1-count);
+        cpu->sr.ccr.carry = (val>>msb) & 1;
+    }
+    
+    cpu->sr.ccr.negative = (val>>msb) & 1;
+    cpu->sr.ccr.zero = (val & (0xFFFFFFFF>>(32-(msb+1)))) == 0;
+    cpu->sr.ccr.overflow = 0;
+    return val;
+}
+
+// Rotate with extend helper function
+uint32_t rotatex(CPU* cpu, uint32_t val2, bool left, uint8_t count, uint8_t msb) {
+    uint64_t val = val2; // We're just going to pretend the extend bit is immediately to the
+                        // left of our data. So uint32_t is not enough for long word anymore
+    
+    if (left) {
+        val = val<<count | val>>(msb+2-count); // We treat the calculations as if our data was 1 bit larger
+    }
+    else {
+        val = val>>count | val<<(msb+2-count);
+    }
+    
+    cpu->sr.ccr.carry = (val>>(msb+1)) & 1;
+    cpu->sr.ccr.extend = (val>>(msb+1)) & 1;
+    cpu->sr.ccr.negative = (val>>msb) & 1;
+    cpu->sr.ccr.zero = (val & (0xFFFFFFFF>>(32-(msb+1)))) == 0;
+    cpu->sr.ccr.overflow = 0;
+    
+    return val;
+}
+
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1110 ======================
-void ASd(INS31233 ins, CPU* cpu) {
-
+void shiftop(INS31233 ins, CPU* cpu, uint8_t type) {
+    printf("(SHIFT/ROTATE OPERATION)\n");
+    operand dstOp;
+    uint8_t count;
+    uint8_t size = WORD;
+    uint8_t msb = 7; // Position of most significant bit
+    if (ins.f3 == 0b11) { // Specifies memory shift, only shift by one and size is word
+        dstOp = read_operand(WORD, ins.f4, ins.f5, false);
+        count = 1;
+    }
+    else { // Specifies data register shift, size can be byte, word or long. Count can be 0-63
+        dstOp = read_operand(ins.f3, 0b000, ins.f5, false);
+        size = ins.f3;
+        
+        count = ins.f1; // If bit 5 is 0, bits 9-11 specify the shift count
+        if (ins.f4 & 0b100) // Otherwise, they specify the data register that contains the count
+            count = cpu->d[ins.f1] & 0x3F; // Modulo 64
+        else if (count == 0)
+            count = 8;
+    }
+    
+    msb = size_to_bytes(size)*8 -1; // Position of the most significant bit
+    dstOp.value &= 0xFFFFFFFF>>(32-(msb+1)); // Clear higher bits in case of right shift!
+    
+    switch(type) {
+        case 0b00:
+            dstOp.value = ashift(cpu, dstOp.value, ins.f2, count, msb);
+            break;
+        case 0b01:
+            dstOp.value = lshift(cpu, dstOp.value, ins.f2, count, msb);
+            break;
+        case 0b10:
+            dstOp.value = rotatex(cpu, dstOp.value, ins.f2, count, msb);
+            break;
+        case 0b11:
+            dstOp.value = rotate(cpu, dstOp.value, ins.f2, count, msb);
+            break;
+    }
+    
+    if (count == 0 && type != 0b10)
+        cpu->sr.ccr.carry = 0;
+    
+    write_operand(dstOp, size);
 }
-void LSd(INS31233 ins, CPU* cpu) {
-
-}
-void ROXd(INS31233 ins, CPU* cpu) {
-
-}
-void ROd(INS31233 ins, CPU* cpu) {
-
-}
-

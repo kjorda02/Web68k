@@ -86,7 +86,4 @@ void add(INS31233 ins, CPU* cpu);
 void addx(INS31233 ins, CPU* cpu);
 void adda(INS31233 ins, CPU* cpu);
 
-void ASd(INS31233 ins, CPU* cpu);
-void LSd(INS31233 ins, CPU* cpu);
-void ROXd(INS31233 ins, CPU* cpu);
-void ROd(INS31233 ins, CPU* cpu);
+void shiftop(INS31233 ins, CPU* cpu, uint8_t type);
