@@ -106,6 +106,7 @@ void AND(INS31233 ins, CPU* cpu) {
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1101 ======================
 
 void add(INS31233 ins, CPU* cpu) {
+    printf("(ADD)\n");
     uint8_t size = ins.f3;
 
     // <ea> + Dn -> Dn
@@ -128,14 +129,15 @@ void addx(INS31233 ins, CPU* cpu) {
 
 // Does not alter condition codes
 void adda(INS31233 ins, CPU* cpu) {
+    printf("(ADDA)\n");
     uint8_t size = WORD;
     if (ins.f2)
         size = LONG;
 
     operand srcOp = read_operand(size, ins.f4, ins.f5, false);
-    operand dstOp = read_operand(size, 0b001, ins.f1, false);
+    operand dstOp = read_operand(LONG, 0b001, ins.f1, false); // An is always long when used as destination operand!
 
-    dstOp.value = srcOp.value + dstOp.value;
+    dstOp.value += srcOp.value;
     write_operand(dstOp, size);
 }
 
@@ -152,3 +154,4 @@ void ROXd(INS31233 ins, CPU* cpu) {
 void ROd(INS31233 ins, CPU* cpu) {
 
 }
+

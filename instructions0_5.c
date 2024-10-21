@@ -104,6 +104,7 @@ void andi(INS31233 ins, CPU* cpu) {
 }
 
 void subi(INS31233 ins, CPU* cpu) {
+    printf("(SUBI)\n");
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
@@ -115,6 +116,7 @@ void subi(INS31233 ins, CPU* cpu) {
 }
 
 void addi(INS31233 ins, CPU* cpu) {
+    printf("(ADDI)\n");
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
@@ -149,7 +151,11 @@ void bop(INS31233 Ins, CPU* cpu) {
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0101 ======================
 
 void addq(INS31233 ins, CPU* cpu) {
+    printf("(ADDQ)\n");
     uint8_t size = ins.f3;
+    if (ins.f4 == 0b001) // Size is discarded with address registers, whole register always used
+        size = LONG;
+    
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
 
     // Condition codes not altered if destination is address register
@@ -161,7 +167,11 @@ void addq(INS31233 ins, CPU* cpu) {
 }
 
 void subq(INS31233 ins, CPU* cpu) {
+    printf("(SUBQ)\n");
     uint8_t size = ins.f3;
+    if (ins.f4 == 0b001)
+        size = LONG;
+    
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
 
     if (dstOp.mem_access || dstOp.dataReg)
@@ -172,6 +182,7 @@ void subq(INS31233 ins, CPU* cpu) {
 }
 
 void Scc(INS4233 ins, CPU* cpu) {
+    printf("(Scc)\n");
     operand dstOp = read_operand(BYTE, ins.f3, ins.f4, true); // Find effective address
     if (check_condition(ins.f1, cpu->sr.ccr))
         dstOp.value = 0xFF;
@@ -181,12 +192,20 @@ void Scc(INS4233 ins, CPU* cpu) {
     write_operand(dstOp, BYTE);
 }
 void DBcc(INS4233 ins, CPU* cpu) {
-    if (check_condition(ins.f1, cpu->sr.ccr)) return;
+    printf("(DBcc)\n");
+    if (check_condition(ins.f1, cpu->sr.ccr)) {
+        cpu->pc += 2; // Skip displacement stored after instruction
+        return;
+    }
 
     operand op1 = read_operand(WORD, 0b000, ins.f4, false); // Read data register
     op1.value = ((int16_t) op1.value) - 1;
     write_operand(op1, WORD);
-    if (((int16_t) op1.value) == -1) return; // If the data register's new value is -1, end the loop'
+    printf("value: %d\n", ((int16_t) op1.value));
+    if (((int16_t) op1.value) == -1) { // If the data register's new value is -1, end the loop'
+        cpu->pc += 2; // Skip displacement stored after instruction
+        return;
+    }
 
     uint32_t pcval = cpu->pc; // IMPORTANT: SAVE VALUE OF PC BEFORE READING DISPLACEMENT VALUE
     operand op2 = read_operand(WORD, 0b111, 0b000, true); // Read displacement (absolute short address)

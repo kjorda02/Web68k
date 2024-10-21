@@ -13,6 +13,7 @@ CPU* initCpu() {
     SR sr = {ccr, 0, 0, 0, 0, 0};
     cpu.sr = sr;
     cpu.pc = cpu.cycles = 0;
+    cpu.a[7] = 0x01000000; // User stack pointer
 
     memset(cpu.ram, 0, sizeof(cpu.ram));
 
@@ -30,6 +31,7 @@ int run_program(uint32_t entryPoint) {
         IR = fetch();
         decode(IR); // Decode calls execute
     }
+    printf("(SENTINEL)\n");
 
 
     return 0;
@@ -40,7 +42,7 @@ int run_program(uint32_t entryPoint) {
 */
 INS fetch() {
     uint16_t word = fetch_data(WORD);
-    printf("DECODING WORD: %x\n", word);
+    printf("DECODING WORD @%X: %X ", cpu.pc-2, word);
     INS i = *((INS*) &word);
 
     return i;
@@ -85,7 +87,7 @@ uint32_t read_mem(uint32_t pos, uint8_t size) {
  * to be written to, and <size> the size of the data to be written (Byte=00, Word=01, Long=10).
 */
 void write_mem(uint32_t pos, uint8_t size, uint32_t data) {
-    if (pos < 0 || pos > sizeof(cpu.ram)-1) {
+    if (pos > sizeof(cpu.ram)-1) {
         char buffer[100];
         snprintf(buffer, sizeof(buffer), "Cannot write to position 0x%x: Out of bounds\n", pos);
         logmsg(ERROR, "cpu.c:write_mem", buffer);
@@ -162,7 +164,7 @@ uint32_t read_An(uint8_t n, uint8_t size) {
         logmsg(ERROR, "cpu.c:read_An", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
-    return truncate_val(cpu.d[n], size);
+    return truncate_val(cpu.a[n], size);
 }
 
 /* --- DECODE ----------------------------------------------------------------------------------

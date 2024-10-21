@@ -2,6 +2,7 @@
 #include "util.h"
 
 void move(INS i, CPU* cpu) {
+    printf("(MOVE)\n");
     INS3333 ins = *((INS3333*) &i);
     uint8_t size = ins.opcode & 0b11; // lower 2 bits of the opcode indicate size
     if (size == 0b01)
@@ -22,6 +23,7 @@ void move(INS i, CPU* cpu) {
 }
 
 void moveq(INS i, CPU* cpu) {
+    printf("(MOVEQ)\n");
     INS318 ins = *(INS318*) &i;
     operand dstOp = read_operand(LONG, 0b000, ins.f1, true);
     dstOp.value = (int8_t) ins.f3; // Casting to signed int for sign extension
@@ -35,9 +37,13 @@ void moveq(INS i, CPU* cpu) {
 }
 
 void Bcc(INS i, CPU* cpu) {
+    printf("(Bcc)\n");
     INS48 ins = *(INS48*) &i;
-    if (!check_condition(ins.cond, cpu->sr.ccr))
+    if (!check_condition(ins.cond, cpu->sr.ccr)) {
+        if (ins.disp == 0)
+            cpu->pc += 2; // Skip displacement stored after instruction
         return;
+    }
 
     if (ins.disp == 0) {
         uint32_t pcval = cpu->pc; // IMPORTANT: SAVE VALUE OF PC BEFORE READING DISPLACEMENT VALUE

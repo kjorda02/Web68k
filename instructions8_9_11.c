@@ -100,6 +100,7 @@ void OR(INS31233 ins, CPU* cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1011 ======================
 void sub(INS31233 ins, CPU* cpu) {
+    printf("(SUB)\n");
     uint8_t size = ins.f3;
 
     // <ea> + Dn -> Dn
@@ -124,12 +125,13 @@ void subx(INS31233 ins, CPU* cpu) {
 
 // Does not alter condition codes
 void suba(INS31233 ins, CPU* cpu) {
+    printf("(SUBA)\n");
     uint8_t size = WORD;
     if (ins.f2)
         size = LONG;
 
     operand srcOp = read_operand(size, ins.f4, ins.f5, false);
-    operand dstOp = read_operand(size, 0b001, ins.f1, false);
+    operand dstOp = read_operand(LONG, 0b001, ins.f1, false); // An is always long when used as destination operand!
 
     dstOp.value -= srcOp.value;
     write_operand(dstOp, size);

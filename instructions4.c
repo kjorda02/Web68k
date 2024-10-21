@@ -145,6 +145,7 @@ void negx(INS4233 ins, CPU* cpu) {
 
 }
 void clr(INS4233 ins, CPU* cpu) {
+    printf("(CLR)\n");
     uint8_t size = ins.f2;
     operand dstOp = read_operand(size, ins.f3, ins.f4, true);
     dstOp.value = 0;
@@ -192,12 +193,13 @@ void tas(INS4233 ins, CPU* cpu) {
 
 }
 void tst(INS4233 ins, CPU* cpu) {
+    printf("(TST)\n");
     uint8_t size = ins.f2;
     operand srcOp = read_operand(size, ins.f3, ins.f4, false);
     set_flags_sub(0, srcOp.value, size, cpu);
 }
 void trap(INS84 ins, CPU* cpu) {
-    printf("TRAP\n");
+    printf("(TRAP)\n");
 }
 void link(INS4233 ins, CPU* cpu) {
 
@@ -221,18 +223,28 @@ void rte(CPU* cpu) {
 
 }
 void rts(CPU* cpu) {
-    printf("RTS\n");
-
+    printf("(RTS)\n");
+    operand srcOp = read_operand(LONG, 0b010, 7, false); // Read (A7)
+    cpu->pc = srcOp.value; // PC <- [[SP]]
+    cpu->a[7] += 4; // SP <- [SP] + 4
 }
 void trapv(CPU* cpu) {
 
 }
 void rtr(CPU* cpu) {
+    
 
 }
 void jsr(INS4233 ins, CPU* cpu) {
-
+    printf("(JSR)\n");
+    cpu->a[7] -= 4; // SP <- [SP] - 4
+    operand op = {cpu->pc, cpu->a[7], true, false, 0};
+    write_operand(op, LONG); // [SP] <- [PC]
+    
+    operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
+    cpu->pc = srcOp.address; // PC <- subroutine dir
 }
+
 void jmp(INS4233 ins, CPU* cpu) {
 
 }
@@ -240,6 +252,7 @@ void movem(INS4233 ins, CPU* cpu) {
 
 }
 void lea(INS3333 ins, CPU* cpu) {
+    printf("(LEA)\n");
     operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
     operand dstOp = read_operand(LONG, 0b001, ins.f1,true);
 
