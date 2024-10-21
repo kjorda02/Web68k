@@ -11,7 +11,7 @@ void decode_op0(INS i, CPU* cpu) {
     // (opcode) (f1) (f2) (f3) (f4) (f5)
     INS31233 ins = *(INS31233*) &i;
 
-    if (ins.f2) {  // Bit 7 is set
+    if (ins.f1 == 0b100 || ins.f2) {
         bop(ins, cpu);
     }
     else {
@@ -164,9 +164,39 @@ void cmpi(INS31233 ins, CPU* cpu) {
     cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }
 
-void bop(INS31233 Ins, CPU* cpu) {
-    // TODO: Check field 2 to see if bit number is stored as immediate (fetch necessary)
-    // Check field 3 to decode between BTST, BCHG, BCLR and BSET
+void bop(INS31233 ins, CPU* cpu) {
+    printf("(BIT OPERATION)\n");
+
+    operand numOp;
+    if (ins.f2) // Bit number is stored in data register
+        numOp = read_operand(BYTE, 0b000, ins.f1, false);
+    else // Bit number is stored as immediate operand
+        numOp = read_operand(BYTE, 0b111, 0b100, false);
+    
+    uint8_t num = numOp.value & 0x1F; // Modulo 32;
+    uint8_t size = LONG;
+    operand dstOp = read_operand(BYTE, ins.f4, ins.f5, true);
+    if (dstOp.mem_access) {
+        num &= 0x7; // Modulo 8
+        size = BYTE;
+    }
+    dstOp = read_operand(size, ins.f4, ins.f5, false);
+    
+    cpu->sr.ccr.zero = !(dstOp.value & (1<<num)); // Set Z condition code accordingly
+    switch (ins.f3) {
+        case 0b00: // BTST
+            return;
+        case 0b01: // BCHG
+            dstOp.value ^= (1<<num); // XOR operation to flip bit
+            break;
+        case 0b10: // BCLR
+            dstOp.value &= ~(1<<num); // Negate mask to clear bit
+            break;
+        case 0b11: // BSET
+            dstOp.value |= 1<<num;
+            break;
+    }
+    write_operand(dstOp, size);
 }
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0101 ======================

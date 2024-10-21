@@ -1,4 +1,5 @@
 #include "util.h"
+#include "colors.h"
 
 static CPU cpu;
 
@@ -42,7 +43,7 @@ int run_program(uint32_t entryPoint) {
 */
 INS fetch() {
     uint16_t word = fetch_data(WORD);
-    printf("DECODING WORD @%X: %X ", cpu.pc-2, word);
+    printf(MAGENTA"DECODING WORD @" BOLD_GREEN "%X" MAGENTA ": %X " BOLD_GREEN, cpu.pc-2, word);
     INS i = *((INS*) &word);
 
     return i;
