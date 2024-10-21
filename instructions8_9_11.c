@@ -93,7 +93,7 @@ void OR(INS31233 ins, CPU* cpu) {
     write_operand(dstOp, size);
 
     cpu->sr.ccr.negative = ( (int32_t) truncate_val(dstOp.value, size)) < 0;
-    cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
+    cpu->sr.ccr.zero = (dstOp.value == 0);
     cpu->sr.ccr.overflow = 0;
     cpu->sr.ccr.carry = 0;
 }
@@ -139,7 +139,19 @@ void suba(INS31233 ins, CPU* cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1011 ======================
 void eor(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
 
+    // <ea> + Dn -> <ea>
+    operand srcOp = read_operand(size, 0b000, ins.f1, false); // Read Dn
+    operand dstOp = read_operand(size, ins.f4, ins.f5, false); // Read <ea>
+    
+    dstOp.value ^= srcOp.value;
+    write_operand(dstOp, size);
+
+    cpu->sr.ccr.negative = ( (int32_t) truncate_val(dstOp.value, size)) < 0;
+    cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0); // Source operands could be negative!
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
 }
 void cmpm(INS31233 ins, CPU* cpu) {
 

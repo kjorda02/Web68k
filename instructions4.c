@@ -144,6 +144,7 @@ void move_to_sr(INS4233 ins, CPU* cpu) {
 void negx(INS4233 ins, CPU* cpu) {
 
 }
+
 void clr(INS4233 ins, CPU* cpu) {
     printf("(CLR)\n");
     uint8_t size = ins.f2;
@@ -156,6 +157,7 @@ void clr(INS4233 ins, CPU* cpu) {
     cpu->sr.ccr.overflow = 0;
     cpu->sr.ccr.carry = 0;
 }
+
 void neg(INS4233 ins, CPU* cpu) {
     uint8_t size = ins.f2;
     operand dstOp = read_operand(size, ins.f3, ins.f4, false);
@@ -163,6 +165,7 @@ void neg(INS4233 ins, CPU* cpu) {
     dstOp.value = -dstOp.value;;
     write_operand(dstOp, size);
 }
+
 void NOT(INS4233 ins, CPU* cpu){
     uint8_t size = ins.f2;
     operand dstOp = read_operand(size, ins.f3, ins.f4, false);
@@ -174,24 +177,57 @@ void NOT(INS4233 ins, CPU* cpu){
     cpu->sr.ccr.overflow = 0;
     cpu->sr.ccr.carry = 0;
 }
-void ext(INS4233 ins, CPU* cpu) {
 
+void ext(INS4233 ins, CPU* cpu) {
+    printf("(EXT)");
+    uint8_t size = WORD;
+    if (ins.f2 == 0b11)
+        size = LONG;
+    
+    operand dstOp = read_operand(BYTE, 0b000, ins.f4, false);
+    dstOp.value = truncate_val(dstOp.value, BYTE); // Sign extend
+    write_operand(dstOp, size);
 }
+
 void nbcd(INS4233 ins, CPU* cpu) {
 
 }
 void swap(INS4233 ins, CPU* cpu) {
-
+    printf("(SWAP)");
+    operand dstOp = read_operand(LONG, 0b000, ins.f4, false);
+    uint16_t low = dstOp.value & 0x0000FFFF;
+    dstOp.value >>= 16;
+    dstOp.value |= low<<16;
+    write_operand(dstOp, LONG);
+    
+    cpu->sr.ccr.negative = (dstOp.value & 0x80000000)>>31;
+    cpu->sr.ccr.zero = (dstOp.value == 0);
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
 }
+
+// TODO: Testing required
 void pea(INS4233 ins, CPU* cpu) {
-
+    operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
+    cpu->a[7] -= 4;
+    operand op = {srcOp.address, cpu->a[7], true, false, 0};
+    write_operand(op, LONG);
 }
+
 void illegal(CPU* cpu) {
 
 }
-void tas(INS4233 ins, CPU* cpu) {
 
+void tas(INS4233 ins, CPU* cpu) {
+    operand dstOp = read_operand(BYTE, ins.f3, ins.f4, false);
+    cpu->sr.ccr.negative = (dstOp.value & 0x80)>>7;
+    cpu->sr.ccr.zero = (truncate_val(dstOp.value, BYTE) == 0);
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
+    dstOp.value |= 0x80;
+    write_operand(dstOp, BYTE);
 }
+
 void tst(INS4233 ins, CPU* cpu) {
     printf("(TST)\n");
     uint8_t size = ins.f2;
@@ -246,7 +282,9 @@ void jsr(INS4233 ins, CPU* cpu) {
 }
 
 void jmp(INS4233 ins, CPU* cpu) {
-
+    printf("(JMP)\n");
+    operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
+    cpu->pc = srcOp.address;
 }
 void movem(INS4233 ins, CPU* cpu) {
 

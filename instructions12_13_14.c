@@ -72,15 +72,30 @@ void decode_op14(INS i, CPU* cpu) {
 void mulu(INS31233 ins, CPU* cpu) {
 
 }
+
 void muls(INS31233 ins, CPU* cpu) {
 
 }
+
 void abcd(INS31233 ins, CPU* cpu) {
 
 }
-void exg(INS31233 ins, CPU* cpu) {
 
+void exg(INS31233 ins, CPU* cpu) {
+    uint8_t mode = ins.f4;
+    operand ry = read_operand(LONG, mode, ins.f5, false);
+    if (ins.f3 == 0b10) // Different types (data and address)
+        mode = 0b000;
+    
+    operand rx = read_operand(LONG, mode, ins.f1, false);
+    
+    uint32_t aux = rx.value;
+    rx.value = ry.value;
+    ry.value = aux;
+    write_operand(rx, LONG);
+    write_operand(ry, LONG);
 }
+
 void AND(INS31233 ins, CPU* cpu) {
     uint8_t size = ins.f3;
 

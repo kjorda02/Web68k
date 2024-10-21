@@ -61,10 +61,12 @@ void decode_op5(INS i, CPU* cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0000 ======================
 
+// TODO: Consider merging ori, andi & eori into one function
 void ori(INS31233 ins, CPU* cpu) {
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
 
+    // TODO: PERMISSIONS
      // If operand in fields 4 and 5 indicates immediate, then the operation is done on the SR
     if (ins.f4 == 0b111 && ins.f5 == 0b100) { // (destination operand cannot be immedate)
         uint16_t sr = *((uint16_t*) &cpu->sr);
@@ -86,6 +88,7 @@ void andi(INS31233 ins, CPU* cpu) {
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
 
+    // TODO: PERMISSIONS
     // If operand in fields 4 and 5 indicates immediate, then the operation is done on the SR
     if (ins.f4 == 0b111 && ins.f5 == 0b100) { // (destination operand cannot be immedate)
         uint16_t sr = *((uint16_t*) &cpu->sr);
@@ -128,7 +131,25 @@ void addi(INS31233 ins, CPU* cpu) {
 }
 
 void eori(INS31233 ins, CPU* cpu) {
-    // TODO: Check for possible SR or CCR operation as in ori
+    uint8_t size = ins.f3;
+    operand srcOp = read_operand(size, 0b111, 0b100, false);
+    
+    // TODO: PERMISSIONS
+    // If operand in fields 4 and 5 indicates immediate, then the operation is done on the SR
+    if (ins.f4 == 0b111 && ins.f5 == 0b100) { // (destination operand cannot be immedate)
+        uint16_t sr = *((uint16_t*) &cpu->sr);
+        sr ^= srcOp.value; // It will be done on CCR or entire SR depending on the size of immediate operand
+        cpu->sr = *((SR*) &sr);
+    }
+    else {
+        operand dstOp = read_operand(size, ins.f4, ins.f5, false);
+        dstOp.value ^= srcOp.value;
+        write_operand(dstOp, size);
+        cpu->sr.ccr.negative = ( (int32_t) truncate_val(dstOp.value, size)) < 0;
+        cpu->sr.ccr.zero = (truncate_val(dstOp.value, size) == 0);
+        cpu->sr.ccr.overflow = 0;
+        cpu->sr.ccr.carry = 0;
+    }
 }
 
 void cmpi(INS31233 ins, CPU* cpu) {
