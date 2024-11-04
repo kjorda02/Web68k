@@ -3,7 +3,8 @@
 
 void move(INS i, CPU* cpu) {
     printf("(MOVE)\n");
-    INS3333 ins = *((INS3333*) &i);
+    INS3333 ins;
+    memcpy(&ins, &i, 2);
     uint8_t size = ins.opcode & 0b11; // lower 2 bits of the opcode indicate size
     if (size == 0b01)
         size = BYTE;
@@ -24,7 +25,8 @@ void move(INS i, CPU* cpu) {
 
 void moveq(INS i, CPU* cpu) {
     printf("(MOVEQ)\n");
-    INS318 ins = *(INS318*) &i;
+    INS318 ins;
+    memcpy(&ins, &i, 2);
     operand dstOp = read_operand(LONG, 0b000, ins.f1, true);
     dstOp.value = (int8_t) ins.f3; // Casting to signed int for sign extension
 
@@ -37,7 +39,8 @@ void moveq(INS i, CPU* cpu) {
 }
 
 void Bcc(INS i, CPU* cpu) {
-    INS48 ins = *(INS48*) &i;
+    INS48 ins;
+    memcpy(&ins, &i, 2);
     if (ins.cond == 0b0001) {
         bsr(ins, cpu);
         return;

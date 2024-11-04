@@ -9,7 +9,8 @@ void decode_op0(INS i, CPU* cpu) {
     // We break the instruction bits into 6 fields:
     //   XXXX   XXX    X   XX  XXX  XXX
     // (opcode) (f1) (f2) (f3) (f4) (f5)
-    INS31233 ins = *(INS31233*) &i;
+    INS31233 ins;
+    memcpy(&ins, &i, 2);
 
     if (ins.f1 == 0b100 || ins.f2) {
         bop(ins, cpu);
@@ -42,8 +43,10 @@ void decode_op0(INS i, CPU* cpu) {
 }
 
 void decode_op5(INS i, CPU* cpu) {
-    INS31233 ins = *(INS31233*) &i;
-    INS4233 ins2 = *(INS4233*) &i; // Only used to pass as argument to instruction implementation function
+    INS31233 ins;
+    memcpy(&ins, &i, 2);
+    INS4233 ins2; // Only used to pass as argument to instruction implementation function
+    memcpy(&ins2, &i, 2);
 
     if (ins.f3 == 0b11) {
         if (ins.f4 == 0b001)
@@ -137,9 +140,10 @@ void eori(INS31233 ins, CPU* cpu) {
     // TODO: PERMISSIONS
     // If operand in fields 4 and 5 indicates immediate, then the operation is done on the SR
     if (ins.f4 == 0b111 && ins.f5 == 0b100) { // (destination operand cannot be immedate)
-        uint16_t sr = *((uint16_t*) &cpu->sr);
+        uint16_t sr;
+        memcpy(&sr, &cpu->sr, 2);
         sr ^= srcOp.value; // It will be done on CCR or entire SR depending on the size of immediate operand
-        cpu->sr = *((SR*) &sr);
+        memcpy(&cpu->sr, &sr, 2);
     }
     else {
         operand dstOp = read_operand(size, ins.f4, ins.f5, false);

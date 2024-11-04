@@ -44,7 +44,8 @@ int run_program(uint32_t entryPoint) {
 INS fetch() {
     uint16_t word = fetch_data(WORD);
     printf(MAGENTA"DECODING WORD @" BOLD_GREEN "%X" MAGENTA ": %X " BOLD_GREEN, cpu.pc-2, word);
-    INS i = *((INS*) &word);
+    INS i;
+    memcpy(&i, &word, 2);
 
     return i;
 }
@@ -63,7 +64,8 @@ uint32_t read_mem(uint32_t pos, uint8_t size) {
     }
     // We need to convert it to little endian format before casting to uint32_t
     uint8_t bytes[4] = {cpu.ram[pos+3],cpu.ram[pos+2],cpu.ram[pos+1], cpu.ram[pos]};
-    uint32_t data = *((uint32_t*) &bytes);
+    uint32_t data;
+    memcpy(&data, &bytes, 4);
 
     if (size == BYTE) {
         data >>= 24;
@@ -250,7 +252,7 @@ operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool addressOnly) {
             break;
         case 0b110: // B(An, Xn.S) / <ea> = B + [An] + [Xn] / Indirect with index
             ext_word = fetch_data(WORD);
-            bew = *((BEW*) &ext_word);
+            memcpy(&bew, &ext_word, 2);
             op.address = ((int8_t) bew.displacement) + cpu.a[Xn];
 
             uint8_t s;
@@ -279,7 +281,7 @@ operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool addressOnly) {
                 case 0b011: // B(PC, Xn.S) / <ea> = B + [PC] + [Xn] / relative with offset
                     op.address = cpu.pc;
                     ext_word = fetch_data(WORD);
-                    bew = *((BEW*) &ext_word);
+                    memcpy(&bew, &ext_word, 2);
                     op.address += ((int8_t) bew.displacement);
 
                     uint8_t s;

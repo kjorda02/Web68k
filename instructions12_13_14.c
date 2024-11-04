@@ -9,7 +9,8 @@ void decode_op12(INS i, CPU* cpu) {
     // We break the instruction bits into 6 fields:
     //   XXXX   XXX    X   XX  XXX  XXX
     // (opcode) (f1) (f2) (f3) (f4) (f5)
-    INS31233 ins = *(INS31233*) &i;
+    INS31233 ins;
+    memcpy(&ins, &i, 2);
 
     if (ins.f3 == 0b11) { // 1100 XXX X 11 XXX XXX
         if (ins.f2)
@@ -33,7 +34,8 @@ void decode_op12(INS i, CPU* cpu) {
 
 
 void decode_op13(INS i, CPU* cpu) {
-    INS31233 ins = *(INS31233*) &i;
+    INS31233 ins;
+    memcpy(&ins, &i, 2);
 
     if (ins.f3 == 0b11) {
         adda(ins, cpu);
@@ -47,7 +49,8 @@ void decode_op13(INS i, CPU* cpu) {
 }
 
 void decode_op14(INS i, CPU* cpu) {
-    INS31233 ins = *(INS31233*) &i;
+    INS31233 ins;
+    memcpy(&ins, &i, 2);
 
     uint8_t type;;
     if (ins.f3 == 0b11) // The destination operand is in memory (only Word size and only 1 bit rotation)'

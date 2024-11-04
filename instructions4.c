@@ -10,9 +10,11 @@ void decode_op4(INS i, CPU* cpu) {
     // We break the instruction bits into 5 fields:
     //   XXXX   XXXX  XX   XXX  XXX
     // (opcode) (f1) (f2) (f3) (f4)
-    INS4233 ins = *(INS4233*) &i;
+    INS4233 ins;
+    memcpy(&ins, &i, 2);
 
-    INS3333 ins3 = *(INS3333*) &i; // For LEA and CHK instructions
+    INS3333 ins3; // For LEA and CHK instructions
+    memcpy(&ins3, &i, 2);
 
     // We look at the next 4 bits after the opcode
     switch(ins.f1) { // 0100 XXXX XX XXX XXX
@@ -71,7 +73,8 @@ void decode_op4(INS i, CPU* cpu) {
         case 0b1110:
             if (ins.f2 == 0b01) { // 0100 1110 01 XXX XXX
                 if (!(ins.f3 & 0b110)) { // 0100 1110 01 00 XXXX
-                    INS84 ins2 = *(INS84*) &i;
+                    INS84 ins2;
+                    memcpy(&ins2, &i, 2);
                     trap(ins2, cpu);
                 }
                 else { // 0100 1110 01 [^00]X XXX
