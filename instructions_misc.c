@@ -37,8 +37,12 @@ void moveq(INS i, CPU* cpu) {
 }
 
 void Bcc(INS i, CPU* cpu) {
-    printf("(Bcc)\n");
     INS48 ins = *(INS48*) &i;
+    if (ins.cond == 0b0001) {
+        bsr(ins, cpu);
+        return;
+    }
+    printf("(Bcc)\n");
     if (!check_condition(ins.cond, cpu->sr.ccr)) {
         if (ins.disp == 0)
             cpu->pc += 2; // Skip displacement stored after instruction
@@ -48,9 +52,29 @@ void Bcc(INS i, CPU* cpu) {
     if (ins.disp == 0) {
         uint32_t pcval = cpu->pc; // IMPORTANT: SAVE VALUE OF PC BEFORE READING DISPLACEMENT VALUE
         operand srcOp = read_operand(WORD, 0b111, 0b100, false);
-        cpu->pc += pcval + ((int16_t) srcOp.value);
+        cpu->pc = pcval + ((int16_t) srcOp.value);
     }
     else {
         cpu->pc += (int8_t) ins.disp;
     }
+}
+
+void bsr(INS48 ins, CPU* cpu) {
+    printf("(BSR)\n");
+    
+    uint32_t jmpdir; // Calculate jump address
+    if (ins.disp == 0) {
+        uint32_t pcval = cpu->pc; // IMPORTANT: SAVE VALUE OF PC BEFORE READING DISPLACEMENT VALUE
+        operand srcOp = read_operand(WORD, 0b111, 0b100, false);
+        jmpdir = pcval + ((int16_t) srcOp.value);
+    }
+    else 
+        jmpdir = cpu->pc + (int8_t) ins.disp;
+    
+    // Save return address
+    cpu->a[7] -= 4; // SP <- [SP] - 4
+    operand op = {cpu->pc, cpu->a[7], true, false, 0};
+    write_operand(op, LONG); // [SP] <- [PC]
+    
+    cpu->pc = jmpdir; // PC <- subroutine dir
 }

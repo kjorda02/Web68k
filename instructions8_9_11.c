@@ -196,9 +196,20 @@ void eor(INS31233 ins, CPU* cpu) {
     cpu->sr.ccr.overflow = 0;
     cpu->sr.ccr.carry = 0;
 }
-void cmpm(INS31233 ins, CPU* cpu) {
 
+void cmpm(INS31233 ins, CPU* cpu) {
+    uint8_t size = ins.f3;
+    operand srcOp = read_operand(size, 0b100, ins.f5, false); // Always predecrement mode
+    operand dstOp = read_operand(size, 0b100, ins.f1, false);
+    
+    int32_t res = truncate_val(dstOp.value - srcOp.value, size);
+    
+    cpu->sr.ccr.negative = (res < 0);
+    cpu->sr.ccr.zero = (res == 0);
+    cpu->sr.ccr.overflow = check_overflow(srcOp.value, dstOp.value, res, size);
+    cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }
+
 void cmp(INS31233 ins, CPU* cpu) {
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, ins.f4, ins.f5, false); // Read <ea>

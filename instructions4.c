@@ -133,13 +133,24 @@ void decode_op4(INS i, CPU* cpu) {
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0100 ======================
 
 void move_from_sr(INS4233 ins, CPU* cpu){
-
+    operand dstOp = read_operand(WORD, ins.f3, ins.f4, true);
+    memcpy(&dstOp.value, &cpu->sr, 2);
+    write_operand(dstOp, WORD);
+    
 }
+
 void move_to_ccr(INS4233 ins, CPU* cpu) {
-
+    operand srcOp = read_operand(WORD, ins.f3, ins.f4, false);
+    uint8_t ccr;
+    memcpy(&ccr, &cpu->sr.ccr, 1);
+    ccr |= srcOp.value;
+    memcpy(&cpu->sr.ccr, &ccr, 1);
 }
-void move_to_sr(INS4233 ins, CPU* cpu) {
 
+// TODO: CHECK PERMISSIONS
+void move_to_sr(INS4233 ins, CPU* cpu) {
+    operand srcOp = read_operand(WORD, ins.f3, ins.f4, false);
+    memcpy(&cpu->sr, &srcOp.value, 2);
 }
 void negx(INS4233 ins, CPU* cpu) {
 
@@ -286,7 +297,61 @@ void jmp(INS4233 ins, CPU* cpu) {
     operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
     cpu->pc = srcOp.address;
 }
+
 void movem(INS4233 ins, CPU* cpu) {
+    uint8_t size = WORD;
+    if (ins.f2 & 1) size = LONG;
+    uint8_t bytes = size_to_bytes(size);
+    uint16_t list = read_operand(WORD, 0b111, 0b100, false).value; // Read register list mask as immediate data
+    uint32_t ea = read_operand(LONG, ins.f3, ins.f4, true).address; // Effective address
+    
+    if (ins.f1 & 0b100) { // Memory to register
+        for (int i = 0; i < 16; i++) {
+            if (((list>>i)&1) == 0)
+                continue;
+            
+            operand op = {read_mem(ea, size), 0, false, i<8, i%8};
+            op.value = truncate_val(op.value, size); // Sign extend (even for Dn)
+            write_operand(op, LONG);
+            ea += bytes;
+        }
+        
+        if (ins.f3 == 0b011) // Postincrement
+            cpu->a[ins.f4] = ea;
+    }
+    else { // Register to memory
+        if (ins.f3 == 0b100) { // Predecrement
+            ea += bytes; // read_operand will have done it's own predecrement'
+            for (int i = 0; i < 16; i++) { 
+                if (((list>>i)&1) == 0)
+                    continue;
+                
+                ea -= bytes;
+                uint32_t val;
+                if (i > 7) val = cpu->d[(15-i)%8];
+                else val = cpu->a[(15-i)%8];
+                
+                operand op = {val, ea, true, false, 0};
+                write_operand(op, size);
+            }
+            
+            cpu->a[ins.f4] = ea;
+        }
+        else {
+            for (int i = 0; i < 16; i++) {
+                if (((list>>i)&1) == 0)
+                    continue;
+                
+                uint32_t val;
+                if (i < 8) val = cpu->d[i%8];
+                else val = cpu->a[i%8];
+                
+                operand op = {val, ea, true, false, 0};
+                write_operand(op, size);
+                ea += bytes;
+            }
+        }
+    }
 
 }
 void lea(INS3333 ins, CPU* cpu) {

@@ -59,6 +59,7 @@ void Scc(INS4233 ins, CPU* cpu);
 void DBcc(INS4233 ins, CPU* cpu);
 
 void Bcc(INS ins, CPU* cpu);
+void bsr(INS48 ins, CPU* cpu);
 
 void moveq(INS ins, CPU* cpu);
 
