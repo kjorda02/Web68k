@@ -68,11 +68,54 @@ void decode_op11(INS i, CPU* cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1000 ======================
 void divu(INS31233 ins, CPU* cpu) {
-
+    operand srcOp = read_operand(WORD, ins.f4, ins.f5, false); // Read <ea>
+    operand dstOp = read_operand(LONG, 0b000, ins.f1, false); // Read Dn
+    srcOp.value &= 0xFFFF; // Truncate to word
+    
+    if ((dstOp.value>>16) >= srcOp.value) {
+        cpu->sr.ccr.overflow = 1;
+        return;
+    }
+    
+    // TODO: CHECK DIVISION BY ZERO
+    uint16_t quotient = dstOp.value/srcOp.value;
+    uint16_t remainder = dstOp.value % srcOp.value;
+    
+    dstOp.value = quotient;
+    dstOp.value |= remainder<<16;
+    write_operand(dstOp, LONG);
+    
+    cpu->sr.ccr.carry = 0;
+    cpu->sr.ccr.negative = ( (int16_t) quotient) < 0;
+    cpu->sr.ccr.zero = (quotient == 0);
+    cpu->sr.ccr.overflow = 0;
 }
+
 void divs(INS31233 ins, CPU* cpu) {
-
+    operand srcOp = read_operand(WORD, ins.f4, ins.f5, false); // Read <ea>
+    operand dstOp = read_operand(LONG, 0b000, ins.f1, false); // Read Dn
+    int16_t divisor = srcOp.value & 0xFFFF; // Truncate to word
+    int32_t dividend = dstOp.value;
+    
+    if ((dividend/divisor)>>16) {
+        cpu->sr.ccr.overflow = 1;
+        return;
+    }
+    
+    // TODO: CHECK DIVISION BY ZERO
+    uint16_t quotient = dividend/divisor;
+    uint16_t remainder = dividend % abs(divisor);
+    
+    dstOp.value = quotient;
+    dstOp.value |= remainder<<16;
+    write_operand(dstOp, LONG);
+    
+    cpu->sr.ccr.negative = ( (int16_t) quotient) < 0;
+    cpu->sr.ccr.zero = (quotient == 0);
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
 }
+
 void sbcd(INS31233 ins, CPU* cpu) {
 
 }

@@ -1,7 +1,9 @@
         ORG $1000
 START:
-        MOVE.L  #2,D0
-        LSL.B   #7,D0
+        MOVE.L  #-1,D0
+        MOVE.B  #-1,D1
+        ADD.B   #1,D1
+        DIVS    #2,D0
         END START
 
 ; SUBROUTINE TEST #2 (PASSED)

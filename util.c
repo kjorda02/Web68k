@@ -122,9 +122,9 @@ bool check_condition(uint8_t condition, CCR ccr) {
         case 0b1101:
             return ccr.negative ^ ccr.overflow; // LT (Less than)
         case 0b1110:
-            return !(ccr.zero | ccr.negative ^ ccr.overflow); // GT (Greater than)
+            return !(ccr.zero | (ccr.negative ^ ccr.overflow)); // GT (Greater than)
         case 0b1111: // LE (Less or equal)
-            return ccr.zero | ccr.negative ^ ccr.overflow;
+            return ccr.zero | (ccr.negative ^ ccr.overflow);
     }
     return false;
 }

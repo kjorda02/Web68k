@@ -13,9 +13,9 @@ void decode_op12(INS i, CPU* cpu) {
 
     if (ins.f3 == 0b11) { // 1100 XXX X 11 XXX XXX
         if (ins.f2)
-            muls(ins, cpu);
+            mult(ins, cpu, true);
         else
-            mulu(ins, cpu);
+            mult(ins, cpu, false);
     }
     else if (ins.f2 == 0) { // 1100 XXX 0 [^11] XXX XXX
         AND(ins, cpu);
@@ -60,12 +60,23 @@ void decode_op14(INS i, CPU* cpu) {
 
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 1100 ======================
 
-void mulu(INS31233 ins, CPU* cpu) {
-
-}
-
-void muls(INS31233 ins, CPU* cpu) {
-
+void mult(INS31233 ins, CPU* cpu, bool sign) {
+    printf("(MULU/MULS)\n");
+    operand srcOp = read_operand(WORD, ins.f4, ins.f5, false); // Read <ea>
+    operand dstOp = read_operand(WORD, 0b000, ins.f1, false); // Read Dn
+    srcOp.value &= 0xFFFF; // Truncate to word
+    dstOp.value &= 0xFFFF;
+    
+    if (sign)
+        dstOp.value = ( (int16_t) dstOp.value)*( (int16_t) srcOp.value);
+    else
+        dstOp.value *= srcOp.value;
+    write_operand(dstOp, LONG);
+    
+    cpu->sr.ccr.negative = ( (int32_t) dstOp.value) < 0;
+    cpu->sr.ccr.zero = dstOp.value == 0;
+    cpu->sr.ccr.overflow = 0;
+    cpu->sr.ccr.carry = 0;
 }
 
 void abcd(INS31233 ins, CPU* cpu) {

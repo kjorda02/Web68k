@@ -76,8 +76,7 @@ void cmpm(INS31233 ins, CPU* cpu);
 void cmp(INS31233 ins, CPU* cpu);
 void cmpa(INS31233 ins, CPU* cpu);
 
-void mulu(INS31233 ins, CPU* cpu);
-void muls(INS31233 ins, CPU* cpu);
+void mult(INS31233 ins, CPU* cpu, bool sign);
 void abcd(INS31233 ins, CPU* cpu);
 void exg(INS31233 ins, CPU* cpu);
 void AND(INS31233 ins, CPU* cpu);
