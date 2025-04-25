@@ -5,41 +5,50 @@
 /* --- LOAD_SREC -----------------------------------------------------------------------------------
  * LOADS S-RECORD FILE'S INSTRUCTIONS INTO RAM AND RETURNS THE ENTRYPOINT ADRESS
 */
-uint32_t load_srec(char* filename, CPU* cpu) {
-    char* records = read_file(filename); // Obtain string with all the S-records in the file
-    uint32_t entryPoint = process_records(records, cpu); // Process them and load into the emulator memory
-    free(records); // Now we've already loaded the program into memory, so we can get rid of the S-records
-    return entryPoint;
-}
-
+// uint32_t load_srec(char* filename, CPU* cpu) {
+//     char* records = read_file(filename); // Obtain string with all the S-records in the file
+//     uint32_t entryPoint = process_records(records, cpu); // Process them and load into the emulator memory
+//     free(records); // Now we've already loaded the program into memory, so we can get rid of the S-records
+//     cpu->pc = entryPoint;
+//     return entryPoint;
+// }
 
 /* READ_FILE -----------------------------------------------------------------------------------
  * READS THE SPECIFIED FILE, RESERVES MEMORY FOR IT AND RETURNS POINTER TO IT
 */
-char* read_file(char* filename) {
-    FILE* file;
-    file = fopen(filename, "rb");
+// char* read_file(char* filename) {
+//     FILE* file;
+//     file = fopen(filename, "rb");
 
-    if (file == NULL){
-        fprintf(stderr, "Error opening the record file. \"%s\"\n", filename);
-        return NULL;
-    }
+//     if (file == NULL){
+//         fprintf(stderr, "Error opening the record file. \"%s\"\n", filename);
+//         return NULL;
+//     }
 
-    // Get the file size in bytes
-    fseek(file, 0, SEEK_END);
-    unsigned int filesize = ftell(file);
-    fseek(file, 0, SEEK_SET);
+//     // Get the file size in bytes
+//     fseek(file, 0, SEEK_END);
+//     unsigned int filesize = ftell(file);
+//     fseek(file, 0, SEEK_SET);
 
-    // Reserve memory for the records
-    char* buf;
-    buf = (char*) malloc(filesize);
+//     // Reserve memory for the records
+//     char* buf;
+//     buf = (char*) malloc(filesize);
 
-    // Read the entire file into memory
-    fread(buf, 1, filesize, file);
+//     // Read the entire file into memory
+//     fread(buf, 1, filesize, file);
 
-    fclose(file);
+//     fclose(file);
 
-    return buf;
+//     return buf;
+// }
+
+/* --- LOAD_SREC_WASM -------------------------------------------------------------------------------------
+ * LOADS S-RECORD DIRECTLY PASSED AS PARAMETER INTO RAM AND RETURNS ENTRYPOINT ADDRESS
+*/
+uint32_t load_srec_wasm(char* records, CPU* cpu) {
+    uint32_t entryPoint = process_records(records, cpu);
+    cpu->pc = entryPoint;
+    return entryPoint;
 }
 
 /* --- PROCESS_RECORDS -----------------------------------------------------------------------------------
@@ -55,9 +64,9 @@ char* read_file(char* filename) {
  *      -> CC is a checksum byte which can be ignored
 */
 uint32_t process_records(char* rec, CPU* cpu) {
-    fprintf(stderr, MAGENTA "==================================================\n");
-    fprintf(stderr, "              READING S-RECORD FILE\n");
-    fprintf(stderr, "==================================================\n"RES);
+    printf("==================================================\n");
+    printf("              READING S-RECORD FILE\n");
+    printf("==================================================\n");
 
     char* pos = rec;  // Position in the s-record file
     uint32_t addr = 0;
@@ -77,8 +86,8 @@ uint32_t process_records(char* rec, CPU* cpu) {
     uint32_t ep = writeBytes(pos+4, 8, cpu); // Does not actually write anything, S7 record has only adress, no data
     cpu->ram[addr++] = 0xFF; // Centinel instruction to end the run loop
     cpu->ram[addr] = 0xFF;
-    printf(MAGENTA "ENTRY POINT ADDRESS: " BOLD_GREEN"%x\n", ep);
-    fprintf(stderr, MAGENTA"--------------------------------------------------\n"RES);
+    printf("ENTRY POINT ADDRESS: %x\n", ep);
+    printf("--------------------------------------------------\n");
     return ep;
 }
 
@@ -124,7 +133,7 @@ uint32_t writeBytes(char* start, int len, CPU* cpu) {
     for (int offset = 0; offset < dataChars; offset += 2) {
         cpu->ram[address+(offset/2)] = parseHex(start+offset);
         if (print) {
-            fprintf(stderr, BOLD_GREEN "[%x] " BLUE "%08b %08b\n" RES, address+(offset/2)-1, parseHex(start+offset-2), parseHex(start+offset));
+            fprintf(stdout, "[%X] %02X %02X\n", address+(offset/2)-1, parseHex(start+offset-2), parseHex(start+offset));
         }
         print = !print;
     }

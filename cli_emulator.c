@@ -11,8 +11,8 @@ int main(int argc, char* argv[]) {
     }
 
     CPU* cpu = initCpu(); // Initializes register and RAM with 0s
-    uint32_t entryPoint = load_srec(argv[1], cpu); // Reads S-record file and loads instructions to memory
-    int statusCode = run_program(entryPoint);
+    load_srec(argv[1], cpu); // Reads S-record file and loads instructions to memory
+    int statusCode = run_program();
 
     print_registers(cpu);
     return statusCode;

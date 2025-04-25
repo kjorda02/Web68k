@@ -1,0 +1,132 @@
+Sections:
+00: "org0001:1000" (1000-1038)
+
+
+Source: "prueba.X68"
+                            	     1: ;        ORG $1000
+                            	     2:         
+                            	     3: ; START:
+                            	     4: ;        MOVE #%1110001110101111,CCR
+                            	     5: ;        MOVE SR,D0
+                            	     6: ;        END START
+                            	     7: 
+                            	     8:  ; MOVEM TEST
+                            	     9:         ORG $1000
+00:00001000 0007            	    10: ETI     DC.W    7
+                            	    11: 
+                            	    12: START:
+00:00001002 41F81000        	    13:         LEA  ETI,A0
+00:00001006 30BC0001        	    14:         MOVE.W  #1,(A0)
+00:0000100A 317C00020002    	    15:         MOVE.W  #2,2(A0)
+00:00001010 317C00030004    	    16:         MOVE.W  #3,4(A0)
+00:00001016 317C00040006    	    17:         MOVE.W  #4,6(A0)
+00:0000101C 317C00050008    	    18:         MOVE.W  #5,8(A0)
+00:00001022 317C0006000A    	    19:         MOVE.W  #6,10(A0)
+00:00001028 317C0007000C    	    20:         MOVE.W  #7,12(A0)
+00:0000102E 317C0008000E    	    21:         MOVE.W  #8,14(A0)
+                            	    22:         
+                            	    23: ;         ; TEST 1 (PASSED)
+                            	    24: ;         MOVEM.W (A0)+,D0-D7
+                            	    25: ;         MOVEM.W D0-D7,-(A0)
+                            	    26: ;         MOVEM.W (A0),D0-D7
+                            	    27: 
+                            	    28:         ; TEST 2 (PASSED)
+00:00001034 4C9828D3        	    29:         MOVEM.W (A0)+,D0-D1/A3/A5/D4/D6-D7
+                            	    30:         END START
+                            	    31: 
+                            	    32: ; SUBROUTINE TEST #2 (PASSED)
+                            	    33: *---------------------------------------------------------------------
+                            	    34: * Program : Example subroutine 2. Library subroutine with use of stack
+                            	    35: * Description: SUM.W = sum the components of a vector, VEC, of N words
+                            	    36: *---------------------------------------------------------------------
+                            	    37: ;         ORG     $1000
+                            	    38: ;         
+                            	    39: ; SUMVEC:
+                            	    40: ;         MOVE.L D0,-(A7)         ; save value of D0 in the stack
+                            	    41: ;         MOVE.L D1,-(A7)         ; save value of D1 in the stack
+                            	    42: ;         MOVE.L A0,-(A7)         ; save value of A0 in the stack
+                            	    43: ;         
+                            	    44: ;         SUBQ.W #2,A7 ; reserve space for a 1-word local 
+                            	    45: ;         
+                            	    46: ;         MOVE.W 22(A7),D0 ; get 1st input parameter (#N)
+                            	    47: ;         MOVE.L 18(A7),A0 ; get 2nd input parameter (@VEC)
+                            	    48: ;         
+                            	    49: ;         CLR.W (A7) ; initialize local variable
+                            	    50: ;         SUBQ.W #1,D0 ; adjust loop counter
+                            	    51: ;         SUMLOOP:
+                            	    52: ;         MOVE.W (A0)+,D1 ; get vector component and point to next one
+                            	    53: ;         ADD.W D1,(A7) ; accumulate addition in local variable
+                            	    54: ;         DBRA D0,SUMLOOP
+                            	    55: ;         
+                            	    56: ;         MOVE.W (A7),24(A7) ; transfer result to the output parameter
+                            	    57: ;         
+                            	    58: ;         ADDQ.W #2,A7
+                            	    59: ;         
+                            	    60: ;         MOVE.L (A7)+,A0 ; restore value of A0
+                            	    61: ;         MOVE.L (A7)+,D1 ; restore value of D1
+                            	    62: ;         MOVE.L (A7)+,D0 ; restore value of D0
+                            	    63: ;         
+                            	    64: ;         RTS
+                            	    65: ;         
+                            	    66: ; N       EQU 5           ; vector length
+                            	    67: ; VEC     DC.W 1,-3,3,4,100
+                            	    68: ; SUM     DS.W 1
+                            	    69: ; START:
+                            	    70: ;         LEA     VEC,A0
+                            	    71: ;         
+                            	    72: ;         MOVE.W  #0,-(A7)        ; reserve space for output parameter and initia.
+                            	    73: ;         MOVE.W  #N,-(A7)        ; reserve space and initialize input parameters
+                            	    74: ;         MOVE.L  A0,-(A7)
+                            	    75: ;         
+                            	    76: ;         JSR SUMVEC              ; call to subroutine
+                            	    77: ;         
+                            	    78: ;         ADDQ.L #6,A7            ; discard the two input parameters from stack
+                            	    79: ;         MOVE.W (A7)+,SUM        ; get the output parameter and discard it
+                            	    80: ;         
+                            	    81: ;         MOVE.W  SUM,D2
+                            	    82:         
+                            	    83: 
+                            	    84: ; SUBTROUTINE TEST #1 (PASSED)
+                            	    85: *---------------------------------------------------------------------
+                            	    86: * Program: Example subroutine 1
+                            	    87: * Description: Z.W = (sum of N first natural numbers)
+                            	    88: * + (sum of M first natural numbers)
+                            	    89: * - (sum of N + M first natural numbers)
+                            	    90: *---------------------------------------------------------------------
+                            	    91: ;         ORG $1000
+                            	    92: ; SUMATORIO:
+                            	    93: ;         MOVE.W #0,D1
+                            	    94: ;         ET0:
+                            	    95: ;         ADD.W D0,D1
+                            	    96: ;         DBRA D0,ET0
+                            	    97: ;         RTS
+                            	    98: ;         
+                            	    99: ; N       EQU -3
+                            	   100: ; M       EQU -8
+                            	   101: ; Z       DS.W 1
+                            	   102: ; START:
+                            	   103: ;         MOVE.W #N,D0
+                            	   104: ;         JSR SUMATORIO
+                            	   105: ;         MOVE.W D1,Z
+                            	   106: ;         
+                            	   107: ;         MOVE.W #M,D0
+                            	   108: ;         JSR SUMATORIO
+                            	   109: ;         ADD.W D1,Z
+                            	   110: ;         
+                            	   111: ;         MOVE.W #N,D0
+                            	   112: ;         ADD.W #M,D0
+                            	   113: ;         JSR SUMATORIO
+                            	   114: ;         SUB.W D1,Z
+                            	   115: ;         
+                            	   116: ;         MOVE.W  Z,D2
+                            	   117: ;         
+                            	   118: ;         END     START
+
+
+Symbols by name:
+ETI                              A:00001000
+START                            A:00001002
+
+Symbols by value:
+00001000 ETI
+00001002 START

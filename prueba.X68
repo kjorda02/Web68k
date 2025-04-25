@@ -1,33 +1,33 @@
-        ORG $1000
+;        ORG $1000
         
-START:
-        MOVE #%1110001110101111,CCR
-        MOVE SR,D0
-        END START
-
-; ; MOVEM TEST
-;         ORG $1000
-; ETI     DC.W    7
-; 
 ; START:
-;         LEA  ETI,A0
-;         MOVE.W  #1,(A0)
-;         MOVE.W  #2,2(A0)
-;         MOVE.W  #3,4(A0)
-;         MOVE.W  #4,6(A0)
-;         MOVE.W  #5,8(A0)
-;         MOVE.W  #6,10(A0)
-;         MOVE.W  #7,12(A0)
-;         MOVE.W  #8,14(A0)
-;         
-; ;         ; TEST 1 (PASSED)
-; ;         MOVEM.W (A0)+,D0-D7
-; ;         MOVEM.W D0-D7,-(A0)
-; ;         MOVEM.W (A0),D0-D7
-; 
-;         ; TEST 2 (PASSED)
-;         MOVEM.W (A0)+,D0-D1/A3/A5/D4/D6-D7
-;         END START
+;        MOVE #%1110001110101111,CCR
+;        MOVE SR,D0
+;        END START
+
+ ; MOVEM TEST
+        ORG $1000
+ETI     DC.W    7
+
+START:
+        LEA  ETI,A0
+        MOVE.W  #1,(A0)
+        MOVE.W  #2,2(A0)
+        MOVE.W  #3,4(A0)
+        MOVE.W  #4,6(A0)
+        MOVE.W  #5,8(A0)
+        MOVE.W  #6,10(A0)
+        MOVE.W  #7,12(A0)
+        MOVE.W  #8,14(A0)
+        
+;         ; TEST 1 (PASSED)
+;         MOVEM.W (A0)+,D0-D7
+;         MOVEM.W D0-D7,-(A0)
+;         MOVEM.W (A0),D0-D7
+
+        ; TEST 2 (PASSED)
+        MOVEM.W (A0)+,D0-D1/A3/A5/D4/D6-D7
+        END START
 
 ; SUBROUTINE TEST #2 (PASSED)
 *---------------------------------------------------------------------

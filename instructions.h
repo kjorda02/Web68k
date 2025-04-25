@@ -1,5 +1,5 @@
 #pragma once
-    #include "cpu.h"
+#include "process_srec.h"
 
 void decode_op0(INS i, CPU* cpu);
 void decode_op4(INS i, CPU* cpu);

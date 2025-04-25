@@ -1,8 +1,10 @@
+#include <emscripten.h>
 #include "util.h"
 #include "colors.h"
 
 static CPU cpu;
 
+EMSCRIPTEN_KEEPALIVE
 CPU* initCpu() {
     for (int i = 0; i < 8; i++) {
         cpu.d[i] = 0;
@@ -21,11 +23,30 @@ CPU* initCpu() {
     return &cpu;
 }
 
+EMSCRIPTEN_KEEPALIVE
+void* wasm_malloc(size_t n) {
+    void* test = malloc(n);
+    printf("puntero: %p\n", test);
+    return test;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void wasmfree(void* ptr) {
+    printf("puntero: %p\n", ptr);
+    free(ptr);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void load_program(char* srec) {
+    //printf("Loaded srec:\n %s\n", srec);
+    load_srec_wasm(srec, &cpu);
+}
+
 /* --- START_PROGRAM -----------------------------------------------------------------------------------
  * RUNS THE MAIN FETCH-DECODE-EXECUTE LOOP, CALLING HELPER METHODS TO ACTUALLY PROCESS THE INSTRUCTIONS
 */
-int run_program(uint32_t entryPoint) {
-    cpu.pc = entryPoint;
+EMSCRIPTEN_KEEPALIVE
+uint32_t run_program() {
     INS IR = {0, 0}; // Instruction register
 
     while (IR.opcode != 0b1111) {
@@ -34,8 +55,24 @@ int run_program(uint32_t entryPoint) {
     }
     printf("(SENTINEL)\n");
 
+    return cpu.pc;
+}
 
-    return 0;
+/* --- STEP_FORWARDS -------------------------------------------------------------------------------------
+ * Runs the instruction currently pointed to by the PC. Returns the state of the registers, including
+ * the new value of the PC.
+*/
+EMSCRIPTEN_KEEPALIVE
+uint32_t step_forwards() {
+    INS IR = fetch();
+    if (IR.opcode != 0b1111) {
+        decode(IR);
+    }
+    else {
+        printf("(SENTINEL)\n");
+    }
+
+    return cpu.pc;
 }
 
 /* --- FETCH -----------------------------------------------------------------------------------
@@ -55,6 +92,7 @@ INS fetch() {
  * of the bytes. <pos> indicates the memory position to be read, and <size> the size of the data
  * to be read (Byte=00, Word=01, Long=10).
 */
+EMSCRIPTEN_KEEPALIVE
 uint32_t read_mem(uint32_t pos, uint8_t size) {
     if (pos < 0 || pos > sizeof(cpu.ram)-1) {
         char buffer[100];
@@ -89,6 +127,7 @@ uint32_t read_mem(uint32_t pos, uint8_t size) {
  * Writes to the memory array, which is in big-endian format. <pos> indicates the memory position
  * to be written to, and <size> the size of the data to be written (Byte=00, Word=01, Long=10).
 */
+EMSCRIPTEN_KEEPALIVE
 void write_mem(uint32_t pos, uint8_t size, uint32_t data) {
     if (pos > sizeof(cpu.ram)-1) {
         char buffer[100];
@@ -139,6 +178,7 @@ uint32_t fetch_data(uint8_t size) {
  * Writes data to a data register, taking into account that if a byte or word is written, the
  * remaining more significant bytes must remain unchanged (NO SIGN EXTENSION!).
 */
+EMSCRIPTEN_KEEPALIVE
 void write_Dn(uint32_t data, uint8_t n, uint8_t size) {
     uint8_t bytes = size_to_bytes(size);
     uint32_t mask = 0xFFFFFFFF;
@@ -150,6 +190,7 @@ void write_Dn(uint32_t data, uint8_t n, uint8_t size) {
     cpu.d[n] |= data; // Set all the 1s that are set in the data in the register
 }
 
+EMSCRIPTEN_KEEPALIVE
 void write_An(uint32_t data, uint8_t n, uint8_t size) {
     if (size == BYTE) {
         logmsg(ERROR, "cpu.c:write_An", "Invalid size argument");
@@ -158,16 +199,28 @@ void write_An(uint32_t data, uint8_t n, uint8_t size) {
     cpu.a[n] = truncate_val(data, size);
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t read_Dn(uint8_t n, uint8_t size) {
     return truncate_val(cpu.d[n], size); // Clears higher bits and sign extends
 }
 
+EMSCRIPTEN_KEEPALIVE
 uint32_t read_An(uint8_t n, uint8_t size) {
     if (size == BYTE) {
         logmsg(ERROR, "cpu.c:read_An", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
     return truncate_val(cpu.a[n], size);
+}
+
+EMSCRIPTEN_KEEPALIVE
+SR read_sr() {
+    return cpu.sr;
+}
+
+EMSCRIPTEN_KEEPALIVE
+unsigned long read_cycles() {
+    return cpu.cycles;
 }
 
 /* --- DECODE ----------------------------------------------------------------------------------
