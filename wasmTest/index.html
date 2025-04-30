@@ -36,5 +36,82 @@
     <div id="result"></div>
     
     <script src="cpu.js"></script>
+
+
+
+    <script src="../vasmm68k_motvasm.js"></script>
+    <script>
+        const code = `
+        ORG $1000
+ETI     DC.W    7
+START:
+        LEA  ETI,A0
+        MOVE.W  #1,(A0)
+        END START
+`;
+
+        var pos = 0;
+
+
+        Module.noExitRuntime = true;
+
+        Module.onExit = function(status) {
+            console.log("Program exited with status: " + status);
+            // Clean up any resources if needed, but don't force exit
+        }
+
+        Module.FS.init(
+            function() { // stdin
+                if (pos >= code.length) {
+                    return null;
+                }
+
+                return code.charCodeAt(pos++);
+            },
+            function(c) {
+                // stdout (default)
+                if (c === null || c === 0) return;
+                if (typeof printChar !== 'undefined') {
+                    printChar(c);
+                } else {
+                    const char = String.fromCharCode(c);
+                    if (char === '\n') {
+                    console.log(Module.stdoutBuffer);
+                        Module.stdoutBuffer = '';
+                    } else {
+                        Module.stdoutBuffer = (Module.stdoutBuffer || '') + char;
+                    }
+                }
+            },
+            function(c) {
+                // stderr (default)
+                if (c === null || c === 0) return;
+                const char = String.fromCharCode(c);
+                if (char === '\n') {
+                    console.error(Module.stderrBuffer);
+                    Module.stderrBuffer = '';
+                } else {
+                    Module.stderrBuffer = (Module.stderrBuffer || '') + char;
+                }
+            }
+
+        );
+
+        Module.onRuntimeInitialized = function() {
+            console.log('WebAssembly module initialized, now running assembler...');
+            const result = performAssembly();
+        };
+
+        function performAssembly() {
+            // const args = ['-m68000', '-chklabels', '-chklabels', '-Fsrec', '-exec=START', '-o', '/dev/stdout'];
+            const args = ['-m68000', '-chklabels', '-chklabels', '-L', '/dev/stdout'];
+            const exitCode = Module.callMain(args);
+            Module.stdoutBuffer = '';
+            Module.stderrBuffer = '';
+            return exitCode;
+        }
+
+
+    </script>
 </body>
 </html>

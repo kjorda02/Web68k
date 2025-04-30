@@ -25,14 +25,11 @@ CPU* initCpu() {
 
 EMSCRIPTEN_KEEPALIVE
 void* wasm_malloc(size_t n) {
-    void* test = malloc(n);
-    printf("puntero: %p\n", test);
-    return test;
+    return malloc(n);
 }
 
 EMSCRIPTEN_KEEPALIVE
 void wasmfree(void* ptr) {
-    printf("puntero: %p\n", ptr);
     free(ptr);
 }
 

@@ -13,7 +13,7 @@
 //     return entryPoint;
 // }
 
-/* READ_FILE -----------------------------------------------------------------------------------
+/* --- READ_FILE -----------------------------------------------------------------------------------
  * READS THE SPECIFIED FILE, RESERVES MEMORY FOR IT AND RETURNS POINTER TO IT
 */
 // char* read_file(char* filename) {
