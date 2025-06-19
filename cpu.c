@@ -18,7 +18,8 @@ CPU* initCpu() {
     cpu.pc = cpu.cycles = 0;
     cpu.a[7] = 0x01000000; // User stack pointer
 
-    memset(cpu.ram, 0, sizeof(cpu.ram));
+    memset(cpu.ram, 255, sizeof(cpu.ram));
+    memset(cpu.breakpoints, 0, sizeof(cpu.breakpoints));
 
     return &cpu;
 }
@@ -34,25 +35,58 @@ void wasmfree(void* ptr) {
 }
 
 EMSCRIPTEN_KEEPALIVE
-void load_program(char* srec) {
+uint32_t load_program(char* srec) {
     //printf("Loaded srec:\n %s\n", srec);
-    load_srec_wasm(srec, &cpu);
+
+    uint32_t entryPoint = process_records(srec, &cpu);
+    cpu.pc = entryPoint;
+    return entryPoint;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void set_breakpoint(uint32_t addr, bool val) {
+    printf("breakpoint @%X: %d\n", addr, val);
+    cpu.breakpoints[addr] = val;
 }
 
 /* --- START_PROGRAM -----------------------------------------------------------------------------------
  * RUNS THE MAIN FETCH-DECODE-EXECUTE LOOP, CALLING HELPER METHODS TO ACTUALLY PROCESS THE INSTRUCTIONS
 */
-EMSCRIPTEN_KEEPALIVE
-uint32_t run_program() {
-    INS IR = {0, 0}; // Instruction register
+// uint32_t run_program() {
+//     INS IR = {0, 0}; // Instruction register
 
-    while (IR.opcode != 0b1111) {
+//     while (IR.opcode != 0b1111) {
+//         IR = fetch();
+//         decode(IR); // Decode calls execute
+//     }
+//     printf("(SENTINEL)\n");
+
+//     return cpu.pc;
+// }
+
+
+EMSCRIPTEN_KEEPALIVE
+bool run_burst(int cycles, int mode) {
+    INS IR = {0, 0}; // Instruction register
+    int initial_cycles = cpu.cycles;
+    cpu.recursion_level = 0;
+
+    while (IR.opcode != 0b1111 && (cpu.cycles - initial_cycles) < cycles) {
+        if (cpu.breakpoints[cpu.pc]) 
+            return true;
+            
         IR = fetch();
         decode(IR); // Decode calls execute
-    }
-    printf("(SENTINEL)\n");
+        cpu.cycles++;
 
-    return cpu.pc;
+        if ( (mode==STEP_OVER && cpu.recursion_level <= 0)
+        || (mode==STEP_INTO) 
+        || (mode==STEP_OUT && cpu.recursion_level < 0)) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 /* --- STEP_FORWARDS -------------------------------------------------------------------------------------
@@ -77,7 +111,8 @@ uint32_t step_forwards() {
 */
 INS fetch() {
     uint16_t word = fetch_data(WORD);
-    printf(MAGENTA"DECODING WORD @" BOLD_GREEN "%X" MAGENTA ": %X " BOLD_GREEN, cpu.pc-2, word);
+    //printf(MAGENTA"DECODING WORD @" BOLD_GREEN "%X" MAGENTA ": %X " BOLD_GREEN, cpu.pc-2, word);
+    // printf("DECODING WORD @%X: %X ", cpu.pc-2, word);
     INS i;
     memcpy(&i, &word, 2);
 
@@ -89,7 +124,6 @@ INS fetch() {
  * of the bytes. <pos> indicates the memory position to be read, and <size> the size of the data
  * to be read (Byte=00, Word=01, Long=10).
 */
-EMSCRIPTEN_KEEPALIVE
 uint32_t read_mem(uint32_t pos, uint8_t size) {
     if (pos < 0 || pos > sizeof(cpu.ram)-1) {
         char buffer[100];
@@ -120,12 +154,30 @@ uint32_t read_mem(uint32_t pos, uint8_t size) {
     }
 }
 
-/* --- WRITES_MEM --------------------------------------------------------------------------------
+
+/* --- READ_MEM_WINDOW --------------------------------------------------------------------------
+ * Allows access to the cpu's memory for displaying in the UI. We use windowSize to do some 
+ * bounds checking, and then return a pointer to the cpu's memory array at the position requested'
+ */
+EMSCRIPTEN_KEEPALIVE
+uint8_t* read_mem_window(uint32_t pos, uint16_t windowSize) {
+    if (pos < 0 || pos+windowSize > sizeof(cpu.ram)) {
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "Cannot read window [0x%x, 0x%x]: Out of bounds\n", pos, pos+windowSize-1);
+        logmsg(ERROR, "cpu.c:read_mem_window", buffer);
+        exit(EXIT_FAILURE);
+    }
+    
+    return &cpu.ram[pos];
+}
+
+/* --- WRITE_MEM --------------------------------------------------------------------------------
  * Writes to the memory array, which is in big-endian format. <pos> indicates the memory position
  * to be written to, and <size> the size of the data to be written (Byte=00, Word=01, Long=10).
 */
 EMSCRIPTEN_KEEPALIVE
 void write_mem(uint32_t pos, uint8_t size, uint32_t data) {
+    // printf("write_mem: pos: %X, size: %d, data: %X\n", pos, size, data);
     if (pos > sizeof(cpu.ram)-1) {
         char buffer[100];
         snprintf(buffer, sizeof(buffer), "Cannot write to position 0x%x: Out of bounds\n", pos);
@@ -177,6 +229,7 @@ uint32_t fetch_data(uint8_t size) {
 */
 EMSCRIPTEN_KEEPALIVE
 void write_Dn(uint32_t data, uint8_t n, uint8_t size) {
+    // printf("data: %d, n: %d\n", data, n);
     uint8_t bytes = size_to_bytes(size);
     uint32_t mask = 0xFFFFFFFF;
     mask >>= (4 - bytes)*8; // 0x000000FF for byte, 0x0000FFFF for word, and 0xFFFFFFFF for long
@@ -196,18 +249,41 @@ void write_An(uint32_t data, uint8_t n, uint8_t size) {
     cpu.a[n] = truncate_val(data, size);
 }
 
-EMSCRIPTEN_KEEPALIVE
 uint32_t read_Dn(uint8_t n, uint8_t size) {
     return truncate_val(cpu.d[n], size); // Clears higher bits and sign extends
 }
 
 EMSCRIPTEN_KEEPALIVE
+uint32_t* read_D_regs() {
+    return cpu.d;
+}
+
 uint32_t read_An(uint8_t n, uint8_t size) {
     if (size == BYTE) {
         logmsg(ERROR, "cpu.c:read_An", "Invalid size argument");
         exit(EXIT_FAILURE);
     }
     return truncate_val(cpu.a[n], size);
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t* read_A_regs() {
+    return cpu.a;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void write_pc(uint32_t val) { // Only used by js code
+    cpu.pc = val;
+}
+
+EMSCRIPTEN_KEEPALIVE
+uint32_t read_pc() { // Only used by js code
+    return cpu.pc;
+}
+
+EMSCRIPTEN_KEEPALIVE
+void write_sr(uint16_t val) { // Only used by js code
+    memcpy(&cpu.sr, &val, 2);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -354,7 +430,7 @@ operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool addressOnly) {
     }
 
     if (op.mem_access && !addressOnly) { // If it wasn't a direct register operation, we need to read the value from memory
-        fprintf(stderr, "Effective address calculated: %x\n", op.address);
+        // fprintf(stderr, "Effective address calculated: %x\n", op.address);
         op.value = read_mem(op.address, size);
     }
     return op;

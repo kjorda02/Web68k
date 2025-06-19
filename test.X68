@@ -1,0 +1,4 @@
+EDITINIT
+    CLR.W   (SELVTX)
+    CLR.B   (EDITSTAT)     ; SELECT
+    RTS

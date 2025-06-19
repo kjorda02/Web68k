@@ -66,6 +66,10 @@ void decode_op5(INS i, CPU* cpu) {
 
 // TODO: Consider merging ori, andi & eori into one function
 void ori(INS31233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(ORI)\n");
+#endif
+
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
 
@@ -88,6 +92,10 @@ void ori(INS31233 ins, CPU* cpu) {
 }
 
 void andi(INS31233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(ANDI)\n");
+#endif
+
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
 
@@ -110,7 +118,9 @@ void andi(INS31233 ins, CPU* cpu) {
 }
 
 void subi(INS31233 ins, CPU* cpu) {
+#if DEBUG
     printf("(SUBI)\n");
+#endif
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
@@ -122,7 +132,9 @@ void subi(INS31233 ins, CPU* cpu) {
 }
 
 void addi(INS31233 ins, CPU* cpu) {
+#if DEBUG
     printf("(ADDI)\n");
+#endif
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
@@ -134,6 +146,9 @@ void addi(INS31233 ins, CPU* cpu) {
 }
 
 void eori(INS31233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(EORI)\n");
+#endif
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     
@@ -157,6 +172,9 @@ void eori(INS31233 ins, CPU* cpu) {
 }
 
 void cmpi(INS31233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(CMPI)\n");
+#endif
     uint8_t size = ins.f3;
     operand srcOp = read_operand(size, 0b111, 0b100, false);
     operand dstOp = read_operand(size, ins.f4, ins.f5, false);
@@ -169,7 +187,9 @@ void cmpi(INS31233 ins, CPU* cpu) {
 }
 
 void bop(INS31233 ins, CPU* cpu) {
+#if DEBUG
     printf("(BIT OPERATION)\n");
+#endif
 
     operand numOp;
     if (ins.f2) // Bit number is stored in data register
@@ -206,7 +226,9 @@ void bop(INS31233 ins, CPU* cpu) {
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0101 ======================
 
 void addq(INS31233 ins, CPU* cpu) {
+#if DEBUG
     printf("(ADDQ)\n");
+#endif
     uint8_t size = ins.f3;
     if (ins.f4 == 0b001) // Size is discarded with address registers, whole register always used
         size = LONG;
@@ -222,7 +244,9 @@ void addq(INS31233 ins, CPU* cpu) {
 }
 
 void subq(INS31233 ins, CPU* cpu) {
+#if DEBUG
     printf("(SUBQ)\n");
+#endif
     uint8_t size = ins.f3;
     if (ins.f4 == 0b001)
         size = LONG;
@@ -237,7 +261,9 @@ void subq(INS31233 ins, CPU* cpu) {
 }
 
 void Scc(INS4233 ins, CPU* cpu) {
+#if DEBUG
     printf("(Scc)\n");
+#endif
     operand dstOp = read_operand(BYTE, ins.f3, ins.f4, true); // Find effective address
     if (check_condition(ins.f1, cpu->sr.ccr))
         dstOp.value = 0xFF;
@@ -247,7 +273,9 @@ void Scc(INS4233 ins, CPU* cpu) {
     write_operand(dstOp, BYTE);
 }
 void DBcc(INS4233 ins, CPU* cpu) {
+#if DEBUG
     printf("(DBcc)\n");
+#endif
     if (check_condition(ins.f1, cpu->sr.ccr)) {
         cpu->pc += 2; // Skip displacement stored after instruction
         return;

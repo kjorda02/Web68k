@@ -15,6 +15,13 @@
 #define FLAGV 0b00000010 // Overflow
 #define FLAGC 0b00000001 // Carry
 
+#define DEBUG 0
+
+#define RUN 0
+#define STEP_OVER 1
+#define STEP_INTO 2
+#define STEP_OUT 3
+
 /* The following structs are used to ease the manipulation of bit fields, avoiding
  * unnecessary bit operations. All fields are in reverse order, since struct fields
  * are stored from last to first in memory, so it cancels out. Additionally, for structs
@@ -50,6 +57,8 @@ typedef struct CPU {
     unsigned long cycles;
 
     uint8_t ram[16777216]; // Memory (2*^24 bytes)
+    bool breakpoints[16777216]; // TODO: Use bits for booleans?
+    int recursion_level;
 } CPU;
 
 typedef struct INS {

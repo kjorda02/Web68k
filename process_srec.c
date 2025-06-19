@@ -42,14 +42,6 @@
 //     return buf;
 // }
 
-/* --- LOAD_SREC_WASM -------------------------------------------------------------------------------------
- * LOADS S-RECORD DIRECTLY PASSED AS PARAMETER INTO RAM AND RETURNS ENTRYPOINT ADDRESS
-*/
-uint32_t load_srec_wasm(char* records, CPU* cpu) {
-    uint32_t entryPoint = process_records(records, cpu);
-    cpu->pc = entryPoint;
-    return entryPoint;
-}
 
 /* --- PROCESS_RECORDS -----------------------------------------------------------------------------------
  * Processes S-records, skipping all but S3 and S7 records. For those records, writeBytes is called to read

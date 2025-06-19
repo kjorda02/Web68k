@@ -37,9 +37,25 @@
     
     <script src="cpu.js"></script>
 
+    <script src="test.js"></script>
+    <script>
+                const code = `
+        ORG $1000
+        INCLUDE "folder/test.X68"
+ETI     DS.W    7
+START:
+        LEA  ETI,A0
+        MOVE.W  #1,(A0)
+        END START
+`;
+        setTimeout(() => {assemble(code, false);}, 1000)
+        setTimeout(() => {assemble(code, false);}, 2000)
+
+    </script>
 
 
-    <script src="../vasmm68k_motvasm.js"></script>
+
+    <!-- <script src="../vasmm68k_motvasm.js"></script>
     <script>
         const code = `
         ORG $1000
@@ -108,10 +124,12 @@ START:
             const exitCode = Module.callMain(args);
             Module.stdoutBuffer = '';
             Module.stderrBuffer = '';
+            pos = 0;
             return exitCode;
         }
 
+        setTimeout(() => {performAssembly()}, 1000);
 
-    </script>
+    </script> -->
 </body>
 </html>

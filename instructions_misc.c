@@ -2,7 +2,9 @@
 #include "util.h"
 
 void move(INS i, CPU* cpu) {
+#if DEBUG
     printf("(MOVE)\n");
+#endif
     INS3333 ins;
     memcpy(&ins, &i, 2);
     uint8_t size = ins.opcode & 0b11; // lower 2 bits of the opcode indicate size
@@ -24,7 +26,9 @@ void move(INS i, CPU* cpu) {
 }
 
 void moveq(INS i, CPU* cpu) {
+#if DEBUG
     printf("(MOVEQ)\n");
+#endif
     INS318 ins;
     memcpy(&ins, &i, 2);
     operand dstOp = read_operand(LONG, 0b000, ins.f1, true);
@@ -45,7 +49,10 @@ void Bcc(INS i, CPU* cpu) {
         bsr(ins, cpu);
         return;
     }
+
+#if DEBUG
     printf("(Bcc)\n");
+#endif
     if (!check_condition(ins.cond, cpu->sr.ccr)) {
         if (ins.disp == 0)
             cpu->pc += 2; // Skip displacement stored after instruction
@@ -63,7 +70,9 @@ void Bcc(INS i, CPU* cpu) {
 }
 
 void bsr(INS48 ins, CPU* cpu) {
+#if DEBUG
     printf("(BSR)\n");
+#endif
     
     uint32_t jmpdir; // Calculate jump address
     if (ins.disp == 0) {

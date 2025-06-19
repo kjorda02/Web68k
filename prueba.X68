@@ -7,6 +7,8 @@
 
  ; MOVEM TEST
         ORG $1000
+        INCLUDE "test.X68"
+
 ETI     DC.W    7
 
 START:

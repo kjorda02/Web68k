@@ -136,6 +136,9 @@ void decode_op4(INS i, CPU* cpu) {
 // === IMPLEMENTATION FOR INSTRUCTIONS WITH OPCODE: 0100 ======================
 
 void move_from_sr(INS4233 ins, CPU* cpu){
+#if DEBUG
+    printf("(MOVE_FROM_SR)\n");
+#endif
     operand dstOp = read_operand(WORD, ins.f3, ins.f4, true);
     memcpy(&dstOp.value, &cpu->sr, 2);
     write_operand(dstOp, WORD);
@@ -143,6 +146,9 @@ void move_from_sr(INS4233 ins, CPU* cpu){
 }
 
 void move_to_ccr(INS4233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(MOVE_TO_CCR)\n");
+#endif
     operand srcOp = read_operand(WORD, ins.f3, ins.f4, false);
     uint8_t ccr;
     memcpy(&ccr, &cpu->sr.ccr, 1);
@@ -152,6 +158,9 @@ void move_to_ccr(INS4233 ins, CPU* cpu) {
 
 // TODO: CHECK PERMISSIONS
 void move_to_sr(INS4233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(MOVE_TO_SR)\n");
+#endif
     operand srcOp = read_operand(WORD, ins.f3, ins.f4, false);
     memcpy(&cpu->sr, &srcOp.value, 2);
 }
@@ -160,7 +169,9 @@ void negx(INS4233 ins, CPU* cpu) {
 }
 
 void clr(INS4233 ins, CPU* cpu) {
+#if DEBUG
     printf("(CLR)\n");
+#endif
     uint8_t size = ins.f2;
     operand dstOp = read_operand(size, ins.f3, ins.f4, true);
     dstOp.value = 0;
@@ -173,6 +184,9 @@ void clr(INS4233 ins, CPU* cpu) {
 }
 
 void neg(INS4233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(NEG)\n");
+#endif
     uint8_t size = ins.f2;
     operand dstOp = read_operand(size, ins.f3, ins.f4, false);
     set_flags_sub(dstOp.value, 0, size, cpu);
@@ -181,6 +195,9 @@ void neg(INS4233 ins, CPU* cpu) {
 }
 
 void NOT(INS4233 ins, CPU* cpu){
+#if DEBUG
+    printf("(NOT)\n");
+#endif
     uint8_t size = ins.f2;
     operand dstOp = read_operand(size, ins.f3, ins.f4, false);
     dstOp.value = ~dstOp.value;
@@ -193,7 +210,9 @@ void NOT(INS4233 ins, CPU* cpu){
 }
 
 void ext(INS4233 ins, CPU* cpu) {
-    printf("(EXT)");
+#if DEBUG
+    printf("(EXT)\n");
+#endif
     uint8_t size = WORD;
     if (ins.f2 == 0b11)
         size = LONG;
@@ -204,10 +223,13 @@ void ext(INS4233 ins, CPU* cpu) {
 }
 
 void nbcd(INS4233 ins, CPU* cpu) {
-
+    printf("NBCD IS NOT IMPLEMENTED!!\n");
 }
+
 void swap(INS4233 ins, CPU* cpu) {
-    printf("(SWAP)");
+#if DEBUG
+    printf("(SWAP)\n");
+#endif 
     operand dstOp = read_operand(LONG, 0b000, ins.f4, false);
     uint16_t low = dstOp.value & 0x0000FFFF;
     dstOp.value >>= 16;
@@ -222,6 +244,9 @@ void swap(INS4233 ins, CPU* cpu) {
 
 // TODO: Testing required
 void pea(INS4233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(PEA)\n");
+#endif 
     operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
     cpu->a[7] -= 4;
     operand op = {srcOp.address, cpu->a[7], true, false, 0};
@@ -229,10 +254,13 @@ void pea(INS4233 ins, CPU* cpu) {
 }
 
 void illegal(CPU* cpu) {
-
+    printf("(ILLEGAL)\n");
 }
 
 void tas(INS4233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(TAS)\n");
+#endif 
     operand dstOp = read_operand(BYTE, ins.f3, ins.f4, false);
     cpu->sr.ccr.negative = (dstOp.value & 0x80)>>7;
     cpu->sr.ccr.zero = (truncate_val(dstOp.value, BYTE) == 0);
@@ -249,59 +277,72 @@ void tst(INS4233 ins, CPU* cpu) {
     set_flags_sub(0, srcOp.value, size, cpu);
 }
 void trap(INS84 ins, CPU* cpu) {
-    printf("(TRAP)\n");
+    printf("(TRAP) NOT IMPLEMENTED!\n");
 }
 void link(INS4233 ins, CPU* cpu) {
-
+    printf("(LINK) NOT IMPLEMENTED!\n");
 }
 void unlk(INS4233 ins, CPU* cpu) {
-
+    printf("(UNLK) NOT IMPLEMENTED!\n");
 }
 void move_usp(INS4233 ins, CPU* cpu) {
-
+    printf("(MOVE_USP) NOT IMPLEMENTED!\n");
 }
 void reset(CPU* cpu) {
-
+    printf("(RESET) NOT IMPLEMENTED!\n");
 }
 void nop(CPU* cpu) {
-
+    printf("(NOP) NOT IMPLEMENTED!\n");
 }
 void stop(CPU* cpu) {
-
+    printf("(STOP) NOT IMPLEMENTED!\n");
 }
 void rte(CPU* cpu) {
-
+    printf("(RTE) NOT IMPLEMENTED!\n");
 }
 void rts(CPU* cpu) {
+#if DEBUG
     printf("(RTS)\n");
+#endif 
+    cpu->recursion_level--;
     operand srcOp = read_operand(LONG, 0b010, 7, false); // Read (A7)
     cpu->pc = srcOp.value; // PC <- [[SP]]
     cpu->a[7] += 4; // SP <- [SP] + 4
 }
 void trapv(CPU* cpu) {
-
+    printf("(TRAPV) NOT IMPLEMENTED!\n");
 }
 void rtr(CPU* cpu) {
-    
-
+    printf("(RTR) NOT IMPLEMENTED!\n");
 }
 void jsr(INS4233 ins, CPU* cpu) {
+#if DEBUG
     printf("(JSR)\n");
+#endif
+    cpu->recursion_level++;
     cpu->a[7] -= 4; // SP <- [SP] - 4
+
+    // Important to read destination address operand before saving pc, can increment pc
+    operand srcOp = read_operand(LONG, ins.f3, ins.f4, true); // if operand is saved as absolute
+
     operand op = {cpu->pc, cpu->a[7], true, false, 0};
     write_operand(op, LONG); // [SP] <- [PC]
     
-    operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
     cpu->pc = srcOp.address; // PC <- subroutine dir
 }
 
 void jmp(INS4233 ins, CPU* cpu) {
+#if DEBUG
     printf("(JMP)\n");
+#endif 
     operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
     cpu->pc = srcOp.address;
 }
 
 void movem(INS4233 ins, CPU* cpu) {
+#if DEBUG
+    printf("(MOVEM)\n");
+#endif 
     uint8_t size = WORD;
     if (ins.f2 & 1) size = LONG;
     uint8_t bytes = size_to_bytes(size);
@@ -358,7 +399,9 @@ void movem(INS4233 ins, CPU* cpu) {
 
 }
 void lea(INS3333 ins, CPU* cpu) {
+#if DEBUG
     printf("(LEA)\n");
+#endif 
     operand srcOp = read_operand(LONG, ins.f3, ins.f4, true);
     operand dstOp = read_operand(LONG, 0b001, ins.f1,true);
 
