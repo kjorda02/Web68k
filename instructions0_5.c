@@ -10,7 +10,7 @@ void decode_op0(INS i, CPU* cpu) {
     //   XXXX   XXX    X   XX  XXX  XXX
     // (opcode) (f1) (f2) (f3) (f4) (f5)
     INS31233 ins;
-    memcpy(&ins, &i, 2);
+    memcpy(&ins, &i, 2); 
 
     if (ins.f1 == 0b100 || ins.f2) {
         bop(ins, cpu);

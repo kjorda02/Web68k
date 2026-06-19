@@ -94,7 +94,7 @@ void write_Dn(uint32_t data, uint8_t n, uint8_t size);
 void write_An(uint32_t data, uint8_t n, uint8_t size);
 uint32_t read_Dn(uint8_t n, uint8_t size);
 uint32_t read_An(uint8_t n, uint8_t size);
-SR read_sr();
+uint16_t read_sr();
 unsigned long read_cycles();
 operand read_operand(uint8_t size, uint8_t M, uint8_t Xn, bool adressOnly);
 void write_operand(operand op, uint8_t size);

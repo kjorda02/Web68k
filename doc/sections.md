@@ -1,4 +1,5 @@
 - Introduction
+    - Objectives
     - Educational emulators
     - Existing emulators and their shortcomings.
         - Easy68K
@@ -41,8 +42,11 @@
     - Importing / exporting and syncing
     - View memory and stack, updates
 
-- Conclusion
+- Results
+    - Execution tests
     - Evaluation (have we accomplished initial goals?)
+    
+- Conclusion
     - Possible improvements
     - Possible extensions
     

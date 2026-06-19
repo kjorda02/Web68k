@@ -1,4 +1,5 @@
 - [x] ASSEMBLER
+    - [ ] Add handling for no entrypoint
     - [x] Mange to be able to run it more than once
     - [x] Read from localstorage instead of stdin (implement syscalls in js)
     - [x] Parse LST to obtain line to addr and addr to line mappings
@@ -6,10 +7,12 @@
 
 - [ ] CPU
     - [x] Proxies
-    - [ ] Execution burst support
-    - [ ] Breakpoints support
-    - [ ] Step into support (run till JSR)
-    - [ ] Step out support (run till RTS)
+    - [x] Mem window support
+    - [x] Execution burst support
+    - [x] Breakpoints support
+    - [x] Step over support
+    - [x] Step out support
+    - [x] Memory-mapped I/O support
     - [ ] Step back support (EXTRA)
 
 - [x] Resizers with flex-grow
@@ -19,29 +22,29 @@
     - [x] View address where instructions were loaded
     - [x] When running, disable editing and scroll to instruction being executed
     - [x] Add and remove breakpoints
-    - [ ] Multiple files support
-    - [ ] Syntax highlighting (EXTRA)
+    - [x] Multiple files support
+    - [x] Syntax highlighting (EXTRA)
     
-- [ ] Register viewer and editor
+- [x] Register viewer and editor
     - [x] Data and address registers
-    - [ ] PC and SR
+    - [x] PC and SR
     
 - [x] Memory viewer and editor
     - [x] Dynamic number of rows
     - [x] Navigation with arrows, pgup/pgdown, hjkl and buttons
     - [ ] ASCII viewer (EXTRA)
 
-- [ ] Multiple files 
-    - [ ] Left sidebar file switcher component
-        - [ ] Folder support
-        - [ ] Create, delete, upload, download
-    - [ ] Export files as zip
-    - [ ] Import files individually or entire folder
+- [x] Multiple files 
+    - [x] Left sidebar file switcher component
+        - [x] Folder support
+        - [x] Create, delete, upload, download
+    - [/] Export files as zip
+    - [/] Import files individually or entire folder
     
 - [ ] Input/output
-    - [ ] 7-segment display
-    - [ ] Buttons
-    - [ ] LEDs
+    - [x] 7-segment display
+    - [x] Buttons
+    - [x] LEDs
     - [ ] Interruptions and timers
 
 - [ ] Stack viewer

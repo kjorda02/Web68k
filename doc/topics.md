@@ -1,8 +1,0 @@
-- Explain basics of fetch-decode-execture, and 68k CPU
-    - Implementacion of the fetch phase
-    - Implementation of the decode phase
-    - Implementation of the execute phase
-- Explain webassembly
-- Explain 68k I/O + interruptions, and how we use them in our gui
-- Explain SREC and LST formats
-- Explain CRDT algorithm if we implement synchronization

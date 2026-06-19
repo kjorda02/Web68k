@@ -76,7 +76,7 @@ void set_flags_add(uint32_t src, uint32_t dst, uint8_t size, CPU* cpu) {
     cpu->sr.ccr.overflow = check_overflow(src, dst, res, size);
     cpu->sr.ccr.carry = check_carry(src, dst, res, size, false);
     cpu->sr.ccr.extend = cpu->sr.ccr.carry;
-    cpu->sr.ccr.negative = (res < 0);
+    cpu->sr.ccr.negative = ((int32_t) res < 0);
     cpu->sr.ccr.zero = (res == 0);
 }
 
@@ -87,7 +87,7 @@ void set_flags_sub(uint32_t src, uint32_t dst, uint8_t size, CPU* cpu) {
     cpu->sr.ccr.overflow = check_overflow(-src, dst, res, size);
     cpu->sr.ccr.carry = check_carry(src, dst, res, size, true);
     cpu->sr.ccr.extend = cpu->sr.ccr.carry;
-    cpu->sr.ccr.negative = (res < 0);
+    cpu->sr.ccr.negative = ((int32_t) res < 0);
     cpu->sr.ccr.zero = (res == 0);
 }
 

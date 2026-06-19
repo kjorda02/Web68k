@@ -13,7 +13,7 @@ CPU* initCpu() {
         cpu.a[i] = 0;
     }
     CCR ccr = {0,0,0,0,0,0};
-    SR sr = {ccr, 0, 0, 0, 0, 0};
+    SR sr = {ccr, 0, 0, 1, 0, 0};
     cpu.sr = sr;
     cpu.pc = cpu.cycles = 0;
     cpu.a[7] = 0x01000000; // User stack pointer
@@ -90,8 +90,7 @@ bool run_burst(int cycles, int mode) {
 }
 
 /* --- STEP_FORWARDS -------------------------------------------------------------------------------------
- * Runs the instruction currently pointed to by the PC. Returns the state of the registers, including
- * the new value of the PC.
+ * Runs the instruction currently pointed to by the PC. Returns the new value of the PC.
 */
 EMSCRIPTEN_KEEPALIVE
 uint32_t step_forwards() {
@@ -287,8 +286,10 @@ void write_sr(uint16_t val) { // Only used by js code
 }
 
 EMSCRIPTEN_KEEPALIVE
-SR read_sr() {
-    return cpu.sr;
+uint16_t read_sr() {
+    uint16_t val;
+    memcpy(&val, &cpu.sr, 2);
+    return val;
 }
 
 EMSCRIPTEN_KEEPALIVE

@@ -144,7 +144,42 @@ void add(INS31233 ins, CPU* cpu) {
     write_operand(dstOp, size);
 }
 void addx(INS31233 ins, CPU* cpu) {
+    printf("(ADDX)\n");
+    uint8_t size = ins.f3;
+    uint8_t x = cpu->sr.ccr.extend;
 
+    operand srcOp, dstOp;
+    if (ins.f4 & 1) { // Memory predecrement: -(Ay) + -(Ax) + X -> -(Ax)
+        srcOp = read_operand(size, 0b100, ins.f5, false);
+        dstOp = read_operand(size, 0b100, ins.f1, false);
+    } else { // Data register: Dy + Dx + X -> Dx
+        srcOp = read_operand(size, 0b000, ins.f5, false);
+        dstOp = read_operand(size, 0b000, ins.f1, false);
+    }
+
+    uint32_t sign_bit;
+    uint64_t mask;
+    if (size == BYTE)      { sign_bit = 0x80;       mask = 0xFF; }
+    else if (size == WORD) { sign_bit = 0x8000;     mask = 0xFFFF; }
+    else                   { sign_bit = 0x80000000; mask = 0xFFFFFFFF; }
+
+    uint64_t wide = (srcOp.value & mask) + (dstOp.value & mask) + x;
+    uint32_t result = (uint32_t)wide;
+    uint8_t carry = (wide > mask);
+
+    uint8_t overflow = ((srcOp.value & sign_bit) == (dstOp.value & sign_bit)) &&
+                       ((result & sign_bit) != (srcOp.value & sign_bit));
+
+    cpu->sr.ccr.carry = carry;
+    cpu->sr.ccr.extend = carry;
+    cpu->sr.ccr.overflow = overflow;
+    cpu->sr.ccr.negative = (truncate_val(result, size) < 0);
+    // Z is only cleared, never set — designed for multi-precision chains
+    if (truncate_val(result, size) != 0)
+        cpu->sr.ccr.zero = 0;
+
+    dstOp.value = result;
+    write_operand(dstOp, size);
 }
 
 // Does not alter condition codes

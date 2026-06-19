@@ -1443,7 +1443,7 @@ var _read_A_regs = Module['_read_A_regs'] = createExportWrapper('read_A_regs', 0
 var _write_pc = Module['_write_pc'] = createExportWrapper('write_pc', 1);
 var _read_pc = Module['_read_pc'] = createExportWrapper('read_pc', 0);
 var _write_sr = Module['_write_sr'] = createExportWrapper('write_sr', 1);
-var _read_sr = Module['_read_sr'] = createExportWrapper('read_sr', 1);
+var _read_sr = Module['_read_sr'] = createExportWrapper('read_sr', 0);
 var _read_cycles = Module['_read_cycles'] = createExportWrapper('read_cycles', 0);
 var _fflush = createExportWrapper('fflush', 1);
 var _strerror = createExportWrapper('strerror', 1);
