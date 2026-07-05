@@ -247,7 +247,7 @@ void cmpm(INS31233 ins, CPU* cpu) {
     
     cpu->sr.ccr.negative = (res < 0);
     cpu->sr.ccr.zero = (res == 0);
-    cpu->sr.ccr.overflow = check_overflow(srcOp.value, dstOp.value, res, size);
+    cpu->sr.ccr.overflow = check_overflow(-srcOp.value, dstOp.value, res, size);
     cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }
 
@@ -259,7 +259,7 @@ void cmp(INS31233 ins, CPU* cpu) {
     int32_t res = truncate_val(dstOp.value - srcOp.value, size);
     cpu->sr.ccr.negative = res < 0;
     cpu->sr.ccr.zero = res == 0;
-    cpu->sr.ccr.overflow = check_overflow(srcOp.value, dstOp.value, res, size);
+    cpu->sr.ccr.overflow = check_overflow(-srcOp.value, dstOp.value, res, size);
     cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }
 
@@ -274,6 +274,6 @@ void cmpa(INS31233 ins, CPU* cpu) {
     int32_t res = truncate_val(dstOp.value - srcOp.value, size);
     cpu->sr.ccr.negative = res < 0;
     cpu->sr.ccr.zero = res == 0;
-    cpu->sr.ccr.overflow = check_overflow(srcOp.value, dstOp.value, res, size);
+    cpu->sr.ccr.overflow = check_overflow(-srcOp.value, dstOp.value, res, size);
     cpu->sr.ccr.carry = check_carry(srcOp.value, dstOp.value, res, size, true);
 }
