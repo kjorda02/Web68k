@@ -4,6 +4,7 @@
 #include<stdint.h>
 #include<string.h>
 #include <math.h>
+#include <limits.h>
 
 #define BYTE 0b00
 #define WORD 0b01
@@ -21,6 +22,9 @@
 #define STEP_OVER 1
 #define STEP_INTO 2
 #define STEP_OUT 3
+
+// Placeholder meaning "no step command in progress" (see step_start_level)
+#define STEP_LEVEL_UNSET INT_MIN
 
 /* The following structs are used to ease the manipulation of bit fields, avoiding
  * unnecessary bit operations. All fields are in reverse order, since struct fields
@@ -59,6 +63,7 @@ typedef struct CPU {
     uint8_t ram[16777216]; // Memory (2*^24 bytes)
     bool breakpoints[16777216]; // TODO: Use bits for booleans?
     int recursion_level;
+    int step_start_level; // Call depth when the current step command started
 } CPU;
 
 typedef struct INS {

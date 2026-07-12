@@ -16,6 +16,8 @@ CPU* initCpu() {
     SR sr = {ccr, 0, 0, 1, 0, 0};
     cpu.sr = sr;
     cpu.pc = cpu.cycles = 0;
+    cpu.recursion_level = 0;
+    cpu.step_start_level = STEP_LEVEL_UNSET;
     cpu.a[7] = 0x01000000; // User stack pointer
 
     memset(cpu.ram, 255, sizeof(cpu.ram));
@@ -69,19 +71,24 @@ EMSCRIPTEN_KEEPALIVE
 bool run_burst(int cycles, int mode) {
     INS IR = {0, 0}; // Instruction register
     int initial_cycles = cpu.cycles;
-    cpu.recursion_level = 0;
+
+    if (cpu.step_start_level == STEP_LEVEL_UNSET)
+        cpu.step_start_level = cpu.recursion_level;
 
     while (IR.opcode != 0b1111 && (cpu.cycles - initial_cycles) < cycles) {
-        if (cpu.breakpoints[cpu.pc]) 
+        if (cpu.breakpoints[cpu.pc]) {
+            cpu.step_start_level = STEP_LEVEL_UNSET;
             return true;
-            
+        }
+
         IR = fetch();
         decode(IR); // Decode calls execute
         cpu.cycles++;
 
-        if ( (mode==STEP_OVER && cpu.recursion_level <= 0)
-        || (mode==STEP_INTO) 
-        || (mode==STEP_OUT && cpu.recursion_level < 0)) {
+        if ( (mode==STEP_OVER && cpu.recursion_level <= cpu.step_start_level)
+        || (mode==STEP_INTO)
+        || (mode==STEP_OUT && cpu.recursion_level < cpu.step_start_level)) {
+            cpu.step_start_level = STEP_LEVEL_UNSET;
             return true;
         }
     }

@@ -73,7 +73,8 @@ void bsr(INS48 ins, CPU* cpu) {
 #if DEBUG
     printf("(BSR)\n");
 #endif
-    
+    cpu->recursion_level++;
+
     uint32_t jmpdir; // Calculate jump address
     if (ins.disp == 0) {
         uint32_t pcval = cpu->pc; // IMPORTANT: SAVE VALUE OF PC BEFORE READING DISPLACEMENT VALUE
